@@ -1,0 +1,175 @@
+import { useEffect, useRef, useState } from 'react';
+import { io, type Socket } from 'socket.io-client';
+import { ChannelSidebar } from './ChannelSidebar';
+import { ChannelView } from './ChannelView';
+import { Login } from './Login';
+import { api, clearToken, getToken } from './api';
+import type { ChannelId, ChannelWithUsers, User, WsEvents } from '../../libs/api/entities';
+
+export function App() {
+  const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [channels, setChannels] = useState<ChannelWithUsers[]>([]);
+  const [activeChannelId, setActiveChannelId] = useState<ChannelId | null>(null);
+  const socketRef = useRef<Socket | null>(null);
+
+  // Restore user from token on mount
+  useEffect(() => {
+    const restoreUser = async () => {
+      const token = getToken();
+      if (!token) {
+        setLoading(false);
+        return;
+      }
+
+      try {
+        const { user: restoredUser } = await api.getMe({});
+        setUser(restoredUser);
+      } catch (error) {
+        // Token is invalid, clear it
+        clearToken();
+        console.error('Failed to restore user:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    restoreUser();
+  }, []);
+
+  // Setup WebSocket when user is authenticated
+  useEffect(() => {
+    const token = getToken();
+    if (!user || !token) return;
+
+    const socket = io('/', { auth: { token } });
+    socketRef.current = socket;
+
+    const onChannelCreated = (data: WsEvents['channelCreated']) => {
+      setChannels((prev) => [...prev, data.channel]);
+    };
+    const onChannelDeleted = (data: WsEvents['channelDeleted']) => {
+      setChannels((prev) => prev.filter((ch) => ch.id !== data.channelId));
+      setActiveChannelId((current) => (current === data.channelId ? null : current));
+    };
+    const onChannelUserJoined = (data: WsEvents['channelUserJoined']) => {
+      setChannels((prev) =>
+        prev.map((ch) =>
+          ch.id === data.channelId && ch.users.every((user) => user.id !== data.user.id)
+            ? { ...ch, users: [...ch.users, data.user] }
+            : ch,
+        ),
+      );
+    };
+    const onChannelUserLeft = (data: WsEvents['channelUserLeft']) => {
+      setChannels((prev) =>
+        prev.map((ch) =>
+          ch.id === data.channelId ? { ...ch, users: ch.users.filter((user) => user.id !== data.userId) } : ch,
+        ),
+      );
+    };
+
+    socket.on('channelCreated', onChannelCreated);
+    socket.on('channelDeleted', onChannelDeleted);
+    socket.on('channelUserJoined', onChannelUserJoined);
+    socket.on('channelUserLeft', onChannelUserLeft);
+
+    return () => {
+      socket.off('channelCreated', onChannelCreated);
+      socket.off('channelDeleted', onChannelDeleted);
+      socket.off('channelUserJoined', onChannelUserJoined);
+      socket.off('channelUserLeft', onChannelUserLeft);
+      socket.disconnect();
+      socketRef.current = null;
+    };
+  }, [user]);
+
+  const refreshChannels = async () => {
+    const { channels: list } = await api.listChannels({});
+    setChannels(list);
+  };
+
+  useEffect(() => {
+    if (user) void refreshChannels();
+  }, [user]);
+
+  const handleLogin = (loggedInUser: User) => {
+    setUser(loggedInUser);
+  };
+
+  const handleLogout = () => {
+    clearToken();
+    setUser(null);
+    setChannels([]);
+    setActiveChannelId(null);
+  };
+
+  const handleJoin = (channelId: ChannelId) => {
+    setActiveChannelId(channelId);
+  };
+
+  const handleLeave = async () => {
+    if (!activeChannelId) return;
+    await api.leaveChannel({ channelId: activeChannelId });
+    setActiveChannelId(null);
+    void refreshChannels();
+  };
+
+  const handleCreate = async (name: string) => {
+    await api.createChannel({ name });
+  };
+
+  const handleDelete = async (channelId: ChannelId) => {
+    if (activeChannelId === channelId) await handleLeave();
+    await api.deleteChannel({ channelId });
+  };
+
+  if (loading) {
+    return (
+      <div style={{ padding: '20px', textAlign: 'center' }}>
+        <h1>VSpeak</h1>
+        <p>Loading...</p>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return <Login onLogin={handleLogin} />;
+  }
+
+  const socket = socketRef.current;
+  const activeChannel = channels.find((ch) => ch.id === activeChannelId);
+
+  return (
+    <div style={{ display: 'flex', height: '100vh', overflow: 'hidden' }}>
+      <ChannelSidebar
+        channels={channels}
+        activeChannelId={activeChannelId}
+        onJoin={handleJoin}
+        onCreate={handleCreate}
+        onDelete={handleDelete}
+      />
+      <div style={{ flex: 1, overflow: 'hidden' }}>
+        {activeChannelId && socket ? (
+          <ChannelView
+            user={user}
+            channelId={activeChannelId}
+            socket={socket}
+            channelUsers={activeChannel?.users ?? []}
+            onLeave={handleLeave}
+            onLogout={handleLogout}
+          />
+        ) : (
+          <div
+            style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: '#999' }}
+          >
+            <div style={{ textAlign: 'center' }}>
+              <div style={{ fontSize: '48px', marginBottom: '12px' }}>👈</div>
+              <div style={{ fontSize: '16px' }}>Select a channel to join</div>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}

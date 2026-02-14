@@ -1,0 +1,41 @@
+{
+  "name": "vspeak",
+  "version": "0.1.0",
+  "description": "Self-hosted voice & text communication platform with WebRTC",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/voznov/vspeak.git"
+  },
+  "author": "Voznov",
+  "license": "Apache-2.0",
+  "scripts": {
+    "build": "pnpm -r build",
+    "lint": "eslint",
+    "lint:fix": "eslint --fix",
+    "dev:server": "pnpm --filter server dev",
+    "dev:client": "pnpm --filter web-client dev",
+    "dev": "pnpm -r --parallel dev"
+  },
+  "devDependencies": {
+    "@total-typescript/ts-reset": "^0.6.1",
+    "@types/node": "^24.7.0",
+    "eslint": "^9.39.1",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-import-resolver-typescript": "^4.4.4",
+    "eslint-plugin-import-x": "^4.16.1",
+    "eslint-plugin-jsonc": "^2.21.0",
+    "eslint-plugin-prettier": "^5.5.4",
+    "jsonc-eslint-parser": "^2.4.1",
+    "prettier": "^3.6.2",
+    "typescript": "^5.9.3",
+    "typescript-eslint": "^8.46.3"
+  },
+  "packageManager": "pnpm@9.0.0",
+  "engines": {
+    "node": ">=20.0.0",
+    "pnpm": ">=9.0.0"
+  },
+  "dependencies": {
+    "radash": "^12.1.1"
+  }
+}
