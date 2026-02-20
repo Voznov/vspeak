@@ -21,14 +21,12 @@ type Props = {
 };
 
 export function ProducerGroupView({ group, recvTransport, device, isSelf, onLog }: Props) {
+  const containerRef = useRef<HTMLDivElement>(null);
   const audioRef = useRef<HTMLAudioElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const connectedIdsRef = useRef(new Set<string>());
-  const activeRef = useRef(true);
-  const [active, setActive] = useState(true);
   const [hasVideo, setHasVideo] = useState(false);
-
-  const hasProducers = group.audio !== undefined || group.video !== undefined;
+  const [hovered, setHovered] = useState(false);
 
   // Auto-connect when transport/device become available or new producers appear
   useEffect(() => {
@@ -58,15 +56,10 @@ export function ProducerGroupView({ group, recvTransport, device, isSelf, onLog 
           audioRef.current.volume = 1.0;
           // Mute own audio to prevent echo; isSelf is stable so closure capture is safe
           if (isSelf) audioRef.current.muted = true;
-          // If user has paused, don't auto-start the newly connected stream
-          if (!activeRef.current) audioRef.current.pause();
-          else {
-            try { await audioRef.current.play(); } catch { /* autoplay policy */ }
-          }
+          try { await audioRef.current.play(); } catch (error) { onLog(`❌ Audio playback error: ${error}`); }
         } else if (info.kind === 'video' && videoRef.current) {
           videoRef.current.srcObject = stream;
           setHasVideo(true);
-          if (!activeRef.current) videoRef.current.pause();
         }
       } catch (error) {
         connectedIdsRef.current.delete(info.producerId);
@@ -83,35 +76,32 @@ export function ProducerGroupView({ group, recvTransport, device, isSelf, onLog 
     if (!group.video) setHasVideo(false);
   }, [group.video]);
 
-  const handleClick = async () => {
-    if (!hasProducers) return;
-    if (active) {
-      audioRef.current?.pause();
-      videoRef.current?.pause();
-      activeRef.current = false;
-      setActive(false);
+  const handleClick = () => {
+    if (!hasVideo || !containerRef.current) return;
+    if (document.fullscreenElement) {
+      void document.exitFullscreen();
     } else {
-      try { await audioRef.current?.play(); } catch { /* autoplay policy */ }
-      try { await videoRef.current?.play(); } catch { /* autoplay policy */ }
-      activeRef.current = true;
-      setActive(true);
+      void containerRef.current.requestFullscreen();
     }
   };
 
-  const showVideo = active && hasVideo;
+  const showVideo = hasVideo;
 
   return (
     <div
+      ref={containerRef}
       onClick={() => void handleClick()}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
       style={{
         position: 'relative',
         width: '100%',
-        minWidth: '300px',
+        maxHeight: '100%',
         aspectRatio: '16 / 9',
         background: '#111',
         borderRadius: '8px',
         overflow: 'hidden',
-        cursor: hasProducers ? 'pointer' : 'default',
+        cursor: hasVideo ? 'pointer' : 'default',
         userSelect: 'none',
       }}
     >
@@ -144,25 +134,28 @@ export function ProducerGroupView({ group, recvTransport, device, isSelf, onLog 
             fontSize: '15px',
           }}
         >
-          {active ? 'No Video' : 'Paused'}
+          No Video
         </div>
       )}
 
-      <div
-        style={{
-          position: 'absolute',
-          top: '8px',
-          left: '8px',
-          background: 'rgba(0, 0, 0, 0.55)',
-          color: '#fff',
-          fontSize: '12px',
-          padding: '2px 8px',
-          borderRadius: '4px',
-        }}
-      >
-        {group.source === 'display' ? '🖥️ ' : (group.audio ? null : '🔇 ')}
-        {group.nickname}
-      </div>
+      {hovered && (
+        <div
+          style={{
+            position: 'absolute',
+            top: '8px',
+            left: '8px',
+            background: 'rgba(0, 0, 0, 0.55)',
+            color: '#fff',
+            fontSize: '16px',
+            padding: '4px 12px',
+            borderRadius: '4px',
+            transition: 'opacity 0.2s',
+          }}
+        >
+          {group.source === 'display' ? '🖥️ ' : (group.audio ? null : '🔇 ')}
+          {group.nickname}
+        </div>
+      )}
     </div>
   );
 }

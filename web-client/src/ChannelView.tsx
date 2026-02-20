@@ -179,15 +179,18 @@ export function ChannelView({ user, channelId, socket, channelUsers, onLeave, on
 
   const groups = groupProducers(producerInfos, channelUsers);
   const cols = Math.max(1, Math.ceil(Math.sqrt(groups.length)));
+  const rows = Math.ceil(groups.length / cols);
 
   return (
     <div style={{ height: '100%', display: 'flex', flexDirection: 'column', position: 'relative', overflow: 'hidden' }}>
       <div
         style={{
+          flex: 1,
           minHeight: 0,
           display: 'grid',
           gridTemplateColumns: `repeat(${cols}, 1fr)`,
-          gridAutoRows: '1fr',
+          gridTemplateRows: `repeat(${rows}, 1fr)`,
+          placeItems: 'center',
           gap: '6px',
           padding: '6px 6px 80px',
         }}

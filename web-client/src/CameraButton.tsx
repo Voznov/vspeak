@@ -29,13 +29,23 @@ export function CameraButton({ sendTransport, onLog }: CameraButtonProps) {
   const start = async () => {
     if (!sendTransport) return;
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: {
+          width: { ideal: 1920 },
+          height: { ideal: 1080 },
+          frameRate: { ideal: 60 },
+        },
+      });
       streamRef.current = stream;
       const videoTrack = stream.getVideoTracks()[0];
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
       }
-      const producer = await sendTransport.produce({ track: videoTrack, appData: { source: 'user' } });
+      const producer = await sendTransport.produce({
+        track: videoTrack,
+        appData: { source: 'user' },
+        encodings: [{ maxBitrate: 10_000_000 }],
+      });
       producerRef.current = producer;
       setActive(true);
     } catch (error) {

@@ -9,7 +9,7 @@ const envSchema = z.object({
   HTTP_PORT: zPort,
   HTTP_HOST: z.string(),
   JWT_SECRET: z.string().min(32),
-  ADMIN_KEY: z.string().min(16),
+  ADMIN_KEY: z.string().min(32),
   MEDIASOUP_LISTEN_IP: z.string().ip(),
   MEDIASOUP_ANNOUNCED_IP: z.string().ip(),
   MEDIASOUP_MIN_PORT: zPort,

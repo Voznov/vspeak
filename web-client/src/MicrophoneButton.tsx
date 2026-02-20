@@ -27,7 +27,14 @@ export function MicrophoneButton({ sendTransport, onLog }: MicrophoneButtonProps
   const start = async () => {
     if (!sendTransport) return;
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const stream = await navigator.mediaDevices.getUserMedia({
+        audio: {
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true,
+          sampleRate: 48000,
+        },
+      });
       streamRef.current = stream;
       const audioTrack = stream.getAudioTracks()[0];
       const producer = await sendTransport.produce({ track: audioTrack, appData: { source: 'user' } });

@@ -69,13 +69,18 @@ export class WebRTCService implements OnModuleInit {
         mimeType: 'audio/opus',
         clockRate: 48000,
         channels: 2,
+        parameters: {
+          maxaveragebitrate: 256000, // 256 kbps
+          useinbandfec: 1,
+          usedtx: 0,
+        },
       },
       {
         kind: 'video',
         mimeType: 'video/VP8',
         clockRate: 90000,
         parameters: {
-          'x-google-start-bitrate': 1000,
+          'x-google-start-bitrate': 5000,
         },
       },
       {
@@ -84,7 +89,7 @@ export class WebRTCService implements OnModuleInit {
         clockRate: 90000,
         parameters: {
           'profile-id': 2,
-          'x-google-start-bitrate': 1000,
+          'x-google-start-bitrate': 5000,
         },
       },
       {
@@ -95,7 +100,7 @@ export class WebRTCService implements OnModuleInit {
           'packetization-mode': 1,
           'profile-level-id': '4d0032',
           'level-asymmetry-allowed': 1,
-          'x-google-start-bitrate': 1000,
+          'x-google-start-bitrate': 5000,
         },
       },
     ];

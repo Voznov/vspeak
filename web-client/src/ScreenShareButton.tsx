@@ -33,12 +33,23 @@ export function ScreenShareButton({ sendTransport, onLog }: ScreenShareButtonPro
   const start = async () => {
     if (!sendTransport) return;
     try {
-      const stream = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: true });
+      const stream = await navigator.mediaDevices.getDisplayMedia({
+        video: {
+          width: { ideal: 1920 },
+          height: { ideal: 1080 },
+          frameRate: { ideal: 60 },
+        },
+        audio: true,
+      });
       streamRef.current = stream;
 
       const videoTrack = stream.getVideoTracks()[0];
       if (videoTrack) {
-        const videoProducer = await sendTransport.produce({ track: videoTrack, appData: { source: 'display' } });
+        const videoProducer = await sendTransport.produce({
+          track: videoTrack,
+          appData: { source: 'display' },
+          encodings: [{ maxBitrate: 10_000_000 }],
+        });
         videoProducerRef.current = videoProducer;
       }
 

@@ -141,7 +141,7 @@ export function App() {
   const activeChannel = channels.find((ch) => ch.id === activeChannelId);
 
   return (
-    <div style={{ display: 'flex', height: '100vh', overflow: 'hidden' }}>
+    <div style={{ display: 'flex', height: '100%', overflow: 'hidden' }}>
       <ChannelSidebar
         channels={channels}
         activeChannelId={activeChannelId}
