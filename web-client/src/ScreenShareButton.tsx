@@ -2,6 +2,8 @@ import { useEffect, useRef, useState } from 'react';
 import type { Producer, Transport } from 'mediasoup-client/types';
 import { api } from './api';
 import type { ProducerId } from '../../libs/api/entities';
+import ScreenShareIcon from './assets/screen-share.svg?react';
+import ScreenShareOffIcon from './assets/screen-share-off.svg?react';
 
 type ScreenShareButtonProps = {
   sendTransport: Transport | null;
@@ -81,13 +83,22 @@ export function ScreenShareButton({ sendTransport, onLog }: ScreenShareButtonPro
     <button
       onClick={active ? () => void stop() : () => void start()}
       disabled={!sendTransport}
+      title={active ? 'Stop screen share' : 'Start screen share'}
       style={{
-        padding: '6px 12px',
-        background: active ? '#e53935' : undefined,
-        color: active ? '#fff' : undefined,
+        width: '44px',
+        height: '44px',
+        borderRadius: '50%',
+        border: 'none',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        cursor: !sendTransport ? 'not-allowed' : 'pointer',
+        background: active ? '#e53935' : 'rgba(255,255,255,0.15)',
+        color: '#fff',
+        flexShrink: 0,
       }}
     >
-      {active ? '⏹ Stop Screen Share' : '🖥️ Start Screen Share'}
+      {active ? <ScreenShareOffIcon width={20} height={20} /> : <ScreenShareIcon width={20} height={20} />}
     </button>
   );
 }

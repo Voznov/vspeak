@@ -2,6 +2,8 @@ import { useEffect, useRef, useState } from 'react';
 import type { Producer, Transport } from 'mediasoup-client/types';
 import { api } from './api';
 import type { ProducerId } from '../../libs/api/entities';
+import VideoIcon from './assets/video.svg?react';
+import VideoOffIcon from './assets/video-off.svg?react';
 
 type CameraButtonProps = {
   sendTransport: Transport | null;
@@ -64,31 +66,25 @@ export function CameraButton({ sendTransport, onLog }: CameraButtonProps) {
   }, []);
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column' }}>
-      <button
-        onClick={active ? () => void stop() : () => void start()}
-        disabled={!sendTransport}
-        style={{
-          padding: '6px 12px',
-          background: active ? '#e53935' : undefined,
-          color: active ? '#fff' : undefined,
-        }}
-      >
-        {active ? '⏹ Stop Camera' : '📹 Start Camera'}
-      </button>
-      {/* <video
-        ref={videoRef}
-        autoPlay
-        playsInline
-        muted
-        style={{
-          width: '100%',
-          maxWidth: '400px',
-          borderRadius: '8px',
-          marginTop: '8px',
-          display: active ? 'block' : 'none',
-        }}
-      /> */}
-    </div>
+    <button
+      onClick={active ? () => void stop() : () => void start()}
+      disabled={!sendTransport}
+      title={active ? 'Stop camera' : 'Start camera'}
+      style={{
+        width: '44px',
+        height: '44px',
+        borderRadius: '50%',
+        border: 'none',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        cursor: !sendTransport ? 'not-allowed' : 'pointer',
+        background: active ? '#e53935' : 'rgba(255,255,255,0.15)',
+        color: '#fff',
+        flexShrink: 0,
+      }}
+    >
+      {active ? <VideoOffIcon width={20} height={20} /> : <VideoIcon width={20} height={20} />}
+    </button>
   );
 }

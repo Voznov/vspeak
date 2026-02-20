@@ -97,13 +97,6 @@ export function App() {
     setUser(loggedInUser);
   };
 
-  const handleLogout = () => {
-    clearToken();
-    setUser(null);
-    setChannels([]);
-    setActiveChannelId(null);
-  };
-
   const handleJoin = (channelId: ChannelId) => {
     setActiveChannelId(channelId);
   };
@@ -112,7 +105,6 @@ export function App() {
     if (!activeChannelId) return;
     await api.leaveChannel({ channelId: activeChannelId });
     setActiveChannelId(null);
-    void refreshChannels();
   };
 
   const handleCreate = async (name: string) => {
@@ -146,6 +138,7 @@ export function App() {
         channels={channels}
         activeChannelId={activeChannelId}
         onJoin={handleJoin}
+        onLeave={handleLeave}
         onCreate={handleCreate}
         onDelete={handleDelete}
       />
@@ -157,7 +150,6 @@ export function App() {
             socket={socket}
             channelUsers={activeChannel?.users ?? []}
             onLeave={handleLeave}
-            onLogout={handleLogout}
           />
         ) : (
           <div

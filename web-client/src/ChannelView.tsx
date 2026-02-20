@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Device } from 'mediasoup-client';
+import PhoneOffIcon from './assets/phone-off.svg?react';
 import type { DtlsParameters, IceCandidate, IceParameters, RtpCapabilities, Transport } from 'mediasoup-client/types';
 import type { Socket } from 'socket.io-client';
 import { api } from './api';
@@ -16,7 +17,6 @@ type ChannelViewProps = {
   socket: Socket;
   channelUsers: User[];
   onLeave: () => void;
-  onLogout: () => void;
 };
 
 const groupProducers = (infos: ProducerInfo[], channelUsers: User[]): ProducerGroup[] => {
@@ -37,7 +37,7 @@ const groupProducers = (infos: ProducerInfo[], channelUsers: User[]): ProducerGr
   );
 };
 
-export function ChannelView({ user, channelId, socket, channelUsers, onLeave, onLogout }: ChannelViewProps) {
+export function ChannelView({ user, channelId, socket, channelUsers, onLeave }: ChannelViewProps) {
   const deviceRef = useRef<Device | null>(null);
   const [sendTransport, setSendTransport] = useState<Transport | null>(null);
   const [recvTransport, setRecvTransport] = useState<Transport | null>(null);
@@ -238,29 +238,33 @@ export function ChannelView({ user, channelId, socket, channelUsers, onLeave, on
           background: 'rgba(18, 18, 18, 0.85)',
           backdropFilter: 'blur(8px)',
           borderRadius: '40px',
-          padding: '8px 20px',
+          padding: '8px',
           zIndex: 100,
         }}
       >
         <MicrophoneButton sendTransport={sendTransport} onLog={addLog} />
         <CameraButton sendTransport={sendTransport} onLog={addLog} />
         <ScreenShareButton sendTransport={sendTransport} onLog={addLog} />
-        <div style={{ width: '1px', height: '24px', background: 'rgba(255,255,255,0.15)' }} />
         <button
           onClick={onLeave}
           disabled={connecting}
+          title="Leave channel"
           style={{
-            padding: '6px 16px',
-            borderRadius: '20px',
+            width: '44px',
+            height: '44px',
+            borderRadius: '50%',
+            border: 'none',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            cursor: connecting ? 'not-allowed' : 'pointer',
             background: '#c62828',
             color: '#fff',
-            border: 'none',
-            cursor: connecting ? 'not-allowed' : 'pointer',
-            fontSize: '13px',
+            flexShrink: 0,
             opacity: connecting ? 0.6 : 1,
           }}
         >
-          Leave
+          <PhoneOffIcon width={20} height={20} />
         </button>
       </div>
     </div>

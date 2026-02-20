@@ -2,6 +2,8 @@ import { useEffect, useRef, useState } from 'react';
 import type { Producer, Transport } from 'mediasoup-client/types';
 import { api } from './api';
 import type { ProducerId } from '../../libs/api/entities';
+import MicIcon from './assets/mic.svg?react';
+import MicOffIcon from './assets/mic-off.svg?react';
 
 type MicrophoneButtonProps = {
   sendTransport: Transport | null;
@@ -59,13 +61,22 @@ export function MicrophoneButton({ sendTransport, onLog }: MicrophoneButtonProps
     <button
       onClick={active ? () => void stop() : () => void start()}
       disabled={!sendTransport}
+      title={active ? 'Mute microphone' : 'Unmute microphone'}
       style={{
-        padding: '6px 12px',
-        background: active ? '#e53935' : undefined,
-        color: active ? '#fff' : undefined,
+        width: '44px',
+        height: '44px',
+        borderRadius: '50%',
+        border: 'none',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        cursor: !sendTransport ? 'not-allowed' : 'pointer',
+        background: active ? '#e53935' : 'rgba(255,255,255,0.15)',
+        color: '#fff',
+        flexShrink: 0,
       }}
     >
-      {active ? '⏹ Stop Microphone' : '🎤 Start Microphone'}
+      {active ? <MicOffIcon width={20} height={20} /> : <MicIcon width={20} height={20} />}
     </button>
   );
 }
