@@ -15,8 +15,16 @@ export type Channel = {
   name: string;
 };
 
+export type UserMediaStatus = {
+  hasMic: boolean;
+  hasVideo: boolean;
+  hasScreen: boolean;
+};
+
+export type UserWithStatus = User & UserMediaStatus;
+
 export type ChannelWithUsers = Channel & {
-  users: User[];
+  users: UserWithStatus[];
 };
 
 export type LoginRequest = {
@@ -197,8 +205,9 @@ export type CloseProducerResponse = {
 
 // WebSocket event types
 export type WsEvents = {
-  channelUserJoined: { channelId: ChannelId; user: User };
+  channelUserJoined: { channelId: ChannelId; user: UserWithStatus };
   channelUserLeft: { channelId: ChannelId; userId: UserId };
+  channelUserStatusChanged: { channelId: ChannelId; userId: UserId; status: UserMediaStatus };
   producerCreated: { info: ProducerInfo };
   producerClosed: { producerId: ProducerId; userId: UserId };
   channelCreated: { channel: ChannelWithUsers };

@@ -1,6 +1,6 @@
 import { randomUUID } from 'crypto';
 import { HttpException, HttpStatus, Injectable, type OnModuleInit } from '@nestjs/common';
-import type { ChannelId, ChannelWithUsers, User, UserId } from '../../../libs/api/entities';
+import type { ChannelId, ChannelWithUsers, UserId, UserWithStatus } from '../../../libs/api/entities';
 import { AuthService } from '../auth/auth.service';
 import { WebRTCService } from '../webrtc/webrtc.service';
 import { WsGateway } from '../ws/ws.gateway';
@@ -93,13 +93,15 @@ export class ChannelsService implements OnModuleInit {
 
     const user = this.authService.getUser(userId);
     if (user) {
-      this.wsGateway.emitToAll('channelUserJoined', { channelId, user });
+      this.wsGateway.emitToAll('channelUserJoined', {
+        channelId,
+        user: { ...user, hasMic: false, hasVideo: false, hasScreen: false },
+      });
     }
 
     return {
       channel: this.getChannelWithUsers(channelId),
-      send: transports.send,
-      recv: transports.recv,
+      ...transports,
     };
   }
 
@@ -132,7 +134,7 @@ export class ChannelsService implements OnModuleInit {
     return undefined;
   }
 
-  getChannelUsers(channelId: ChannelId): User[] {
+  getChannelUsers(channelId: ChannelId): UserWithStatus[] {
     const channel = this.channels.get(channelId);
     if (!channel) {
       return [];
@@ -144,7 +146,7 @@ export class ChannelsService implements OnModuleInit {
         throw new Error(`User ${userId} not found`);
       }
 
-      return user;
+      return { ...user, ...this.webrtcService.getUserMediaStatus(userId) };
     });
   }
 

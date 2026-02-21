@@ -14,7 +14,7 @@ import {
   WebRtcTransport,
   Worker,
 } from 'mediasoup/types';
-import { ChannelId, ConsumerId, ProducerId, ProducerInfo, ProducerKind, ProducerSource, TransportId, UserId } from '../../../libs/api/entities';
+import { ChannelId, ConsumerId, ProducerId, ProducerInfo, ProducerKind, ProducerSource, TransportId, UserId, UserMediaStatus } from '../../../libs/api/entities';
 import { ENV } from '../env';
 import { WsGateway } from '../ws/ws.gateway';
 
@@ -22,7 +22,7 @@ type UserInfo = {
   sendTransport: Transport;
   recvTransport: Transport;
   channelId: ChannelId;
-  producers: Map<ProducerId, Producer>;
+  producers: Map<ProducerId, Producer<{ source: ProducerSource }>>;
   consumers: Map<ConsumerId, Consumer>;
 };
 
@@ -260,13 +260,43 @@ export class WebRTCService implements OnModuleInit {
 
     userInfo.producers.set(producerId, producer);
     producer.on('@close', () => {
+      const { channelId } = userInfo;
       userInfo.producers.delete(producerId);
-      this.wsGateway.emitToChannel(userInfo.channelId, 'producerClosed', { producerId, userId });
+      this.wsGateway.emitToChannel(channelId, 'producerClosed', { producerId, userId });
+      if (this.userInfos.has(userId)) {
+        this.wsGateway.emitToAll('channelUserStatusChanged', { channelId, userId, status: this.getUserMediaStatus(userId) });
+      }
     });
 
     this.wsGateway.emitToChannel(userInfo.channelId, 'producerCreated', { info: { userId, producerId, kind, source } });
+    this.wsGateway.emitToAll('channelUserStatusChanged', { channelId: userInfo.channelId, userId, status: this.getUserMediaStatus(userId) });
 
     return { producerId };
+  }
+
+  public getUserMediaStatus(userId: UserId): UserMediaStatus {
+    const userInfo = this.userInfos.get(userId);
+    if (!userInfo) return { hasMic: false, hasVideo: false, hasScreen: false };
+    let hasMic = false;
+    let hasVideo = false;
+    let hasScreen = false;
+    for (const producer of userInfo.producers.values()) {
+      const { kind } = producer;
+      const { source } = producer.appData;
+      if (kind === 'audio') {
+        if (source === 'user') {
+          hasMic = true;
+        }
+      } else {
+        if (source === 'user') {
+          hasVideo = true;
+        } else {
+          hasScreen = true;
+        }
+      }
+    }
+
+    return { hasMic, hasVideo, hasScreen };
   }
 
   public async consumeStream(userId: UserId, producerUserId: UserId, producerId: ProducerId, rtpCapabilities: RtpCapabilities) {

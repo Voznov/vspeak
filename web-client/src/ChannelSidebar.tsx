@@ -1,5 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import type { ChannelId, ChannelWithUsers } from '../../libs/api/entities';
+import MicOffIcon from './assets/mic-off.svg?react';
+import ScreenShareIcon from './assets/screen-share.svg?react';
+import VideoIcon from './assets/video.svg?react';
 
 type ChannelSidebarProps = {
   channels: ChannelWithUsers[];
@@ -164,7 +167,14 @@ export function ChannelSidebar({ channels, activeChannelId, onJoin, onLeave, onC
                         }}
                       >
                         <span style={{ color: '#4CAF50', fontSize: '8px' }}>●</span>
-                        {u.nickname}
+                        <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                          {u.nickname}
+                        </span>
+                        <div style={{ display: 'flex', gap: '2px', flexShrink: 0 }}>
+                          {!u.hasMic && <MicOffIcon width={11} height={11} style={{ opacity: 0.45 }} />}
+                          {u.hasVideo && <VideoIcon width={11} height={11} style={{ color: '#4CAF50' }} />}
+                          {u.hasScreen && <ScreenShareIcon width={11} height={11} style={{ color: '#2196F3' }} />}
+                        </div>
                       </div>
                     ))}
                   </div>

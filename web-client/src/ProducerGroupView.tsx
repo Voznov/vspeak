@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import type { Device } from 'mediasoup-client';
+import MicOffIcon from './assets/mic-off.svg?react';
+import ScreenShareIcon from './assets/screen-share.svg?react';
 import type { RtpParameters, Transport } from 'mediasoup-client/types';
 import { api } from './api';
 import type { ProducerInfo, ProducerSource, UserId } from '../../libs/api/entities';
@@ -152,7 +154,7 @@ export function ProducerGroupView({ group, recvTransport, device, isSelf, onLog 
             transition: 'opacity 0.2s',
           }}
         >
-          {group.source === 'display' ? '🖥️ ' : (group.audio ? null : '🔇 ')}
+          {group.source === 'display' ? <ScreenShareIcon width={16} height={16} style={{ marginRight: '4px', verticalAlign: 'middle' }} /> : (group.audio ? null : <MicOffIcon width={16} height={16} style={{ marginRight: '4px', verticalAlign: 'middle' }} />)}
           {group.nickname}
         </div>
       )}

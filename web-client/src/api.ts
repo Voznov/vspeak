@@ -3,6 +3,7 @@ import { Api } from '../../libs/api';
 import { type RpcOptions } from '../../libs/rpc.interface';
 
 const TOKEN_KEY = 'auth_token';
+const MIC_ENABLED_KEY = 'mic_enabled';
 
 export const getToken = (): string | null => {
   return localStorage.getItem(TOKEN_KEY);
@@ -14,6 +15,12 @@ export const setToken = (token: string): void => {
 
 export const clearToken = (): void => {
   localStorage.removeItem(TOKEN_KEY);
+};
+
+export const getMicEnabled = (): boolean => localStorage.getItem(MIC_ENABLED_KEY) === 'true';
+
+export const setMicEnabled = (enabled: boolean): void => {
+  localStorage.setItem(MIC_ENABLED_KEY, enabled ? 'true' : 'false');
 };
 
 export const api = new Proxy(new Api(), {

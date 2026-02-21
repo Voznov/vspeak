@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import type { Producer, Transport } from 'mediasoup-client/types';
-import { api } from './api';
+import { api, getMicEnabled, setMicEnabled } from './api';
 import type { ProducerId } from '../../libs/api/entities';
 import MicIcon from './assets/mic.svg?react';
 import MicOffIcon from './assets/mic-off.svg?react';
@@ -23,11 +23,12 @@ export function MicrophoneButton({ sendTransport, onLog }: MicrophoneButtonProps
     }
     streamRef.current?.getTracks().forEach((t) => t.stop());
     streamRef.current = null;
+    setMicEnabled(false);
     setActive(false);
   };
 
   const start = async () => {
-    if (!sendTransport) return;
+    if (!sendTransport || sendTransport.closed) return;
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
         audio: {
@@ -41,11 +42,19 @@ export function MicrophoneButton({ sendTransport, onLog }: MicrophoneButtonProps
       const audioTrack = stream.getAudioTracks()[0];
       const producer = await sendTransport.produce({ track: audioTrack, appData: { source: 'user' } });
       producerRef.current = producer;
+      setMicEnabled(true);
       setActive(true);
     } catch (error) {
+      streamRef.current?.getTracks().forEach((t) => t.stop());
+      streamRef.current = null;
       onLog(`❌ Error: ${error}`);
     }
   };
+
+  // Auto-start mic when transport is ready if it was enabled in the previous session
+  useEffect(() => {
+    if (sendTransport && getMicEnabled()) void start();
+  }, [sendTransport]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Release mic track on unmount (channel switch or leave)
   useEffect(() => {

@@ -50,6 +50,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
   const nextId = useRef(0);
 
   const addToast = useCallback((message: string) => {
+    console.log(message);
     const id = nextId.current++;
     setToasts((prev) => [...prev, { id, message }]);
     setTimeout(() => {

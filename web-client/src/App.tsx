@@ -69,16 +69,28 @@ export function App() {
       );
     };
 
+    const onChannelUserStatusChanged = (data: WsEvents['channelUserStatusChanged']) => {
+      setChannels((prev) =>
+        prev.map((ch) =>
+          ch.id !== data.channelId
+            ? ch
+            : { ...ch, users: ch.users.map((u) => (u.id !== data.userId ? u : { ...u, ...data.status })) },
+        ),
+      );
+    };
+
     socket.on('channelCreated', onChannelCreated);
     socket.on('channelDeleted', onChannelDeleted);
     socket.on('channelUserJoined', onChannelUserJoined);
     socket.on('channelUserLeft', onChannelUserLeft);
+    socket.on('channelUserStatusChanged', onChannelUserStatusChanged);
 
     return () => {
       socket.off('channelCreated', onChannelCreated);
       socket.off('channelDeleted', onChannelDeleted);
       socket.off('channelUserJoined', onChannelUserJoined);
       socket.off('channelUserLeft', onChannelUserLeft);
+      socket.off('channelUserStatusChanged', onChannelUserStatusChanged);
       socket.disconnect();
       socketRef.current = null;
     };
