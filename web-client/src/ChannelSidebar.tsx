@@ -3,6 +3,7 @@ import type { ChannelId, ChannelWithUsers } from '../../libs/api/entities';
 import MicOffIcon from './assets/mic-off.svg?react';
 import ScreenShareIcon from './assets/screen-share.svg?react';
 import VideoIcon from './assets/video.svg?react';
+import { theme } from './theme';
 
 type ChannelSidebarProps = {
   channels: ChannelWithUsers[];
@@ -85,16 +86,16 @@ export function ChannelSidebar({ channels, activeChannelId, onJoin, onLeave, onC
         style={{
           width: '220px',
           minWidth: '220px',
-          borderRight: '1px solid #ddd',
+          borderRight: `1px solid ${theme.border.primary}`,
           display: 'flex',
           flexDirection: 'column',
           padding: '12px 8px',
           gap: '4px',
-          background: '#f5f5f5',
+          background: theme.bg.secondary,
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', marginBottom: '8px', paddingLeft: '4px' }}>
-          <div style={{ flex: 1, fontWeight: 700, fontSize: '13px', color: '#555' }}>CHANNELS</div>
+          <div style={{ flex: 1, fontWeight: 700, fontSize: '13px', color: theme.text.heading }}>CHANNELS</div>
           <button
             onClick={() => setShowModal(true)}
             title="Create channel"
@@ -111,7 +112,7 @@ export function ChannelSidebar({ channels, activeChannelId, onJoin, onLeave, onC
               background: 'transparent',
               border: 'none',
               borderRadius: '4px',
-              color: '#555',
+              color: theme.text.heading,
               cursor: 'pointer',
             }}
           >
@@ -130,8 +131,8 @@ export function ChannelSidebar({ channels, activeChannelId, onJoin, onLeave, onC
                   style={{
                     padding: '6px 8px',
                     borderRadius: '6px',
-                    background: isActive ? '#4CAF50' : 'transparent',
-                    color: isActive ? '#fff' : '#333',
+                    background: isActive ? theme.accent.primary : 'transparent',
+                    color: isActive ? theme.text.onAccent : theme.text.primary,
                     cursor: 'pointer',
                     fontSize: '14px',
                     fontWeight: isActive ? 600 : 400,
@@ -160,20 +161,21 @@ export function ChannelSidebar({ channels, activeChannelId, onJoin, onLeave, onC
                         key={u.id}
                         style={{
                           fontSize: '12px',
-                          color: '#444',
+                          color: theme.text.primary,
                           display: 'flex',
                           alignItems: 'center',
-                          gap: '4px',
+                          gap: '6px',
+                          padding: '4px 0',
                         }}
                       >
-                        <span style={{ color: '#4CAF50', fontSize: '8px' }}>●</span>
+                        <span style={{ color: theme.accent.primary, fontSize: '8px' }}>●</span>
                         <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                           {u.nickname}
                         </span>
-                        <div style={{ display: 'flex', gap: '2px', flexShrink: 0 }}>
-                          {!u.hasMic && <MicOffIcon width={11} height={11} style={{ opacity: 0.45 }} />}
-                          {u.hasVideo && <VideoIcon width={11} height={11} style={{ color: '#4CAF50' }} />}
-                          {u.hasScreen && <ScreenShareIcon width={11} height={11} style={{ color: '#2196F3' }} />}
+                        <div style={{ display: 'flex', gap: '4px', flexShrink: 0, color: theme.text.secondary }}>
+                          {!u.hasMic && <MicOffIcon width={14} height={14} />}
+                          {u.hasVideo && <VideoIcon width={14} height={14} />}
+                          {u.hasScreen && <ScreenShareIcon width={14} height={14} />}
                         </div>
                       </div>
                     ))}
@@ -184,7 +186,7 @@ export function ChannelSidebar({ channels, activeChannelId, onJoin, onLeave, onC
           })}
 
           {channels.length === 0 && (
-            <div style={{ fontSize: '13px', color: '#999', padding: '8px 4px' }}>No channels yet</div>
+            <div style={{ fontSize: '13px', color: theme.text.secondary, padding: '8px 4px' }}>No channels yet</div>
           )}
         </div>
       </div>
@@ -194,7 +196,7 @@ export function ChannelSidebar({ channels, activeChannelId, onJoin, onLeave, onC
           style={{
             position: 'fixed',
             inset: 0,
-            background: 'rgba(0,0,0,0.4)',
+            background: theme.bg.overlay,
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
@@ -204,14 +206,15 @@ export function ChannelSidebar({ channels, activeChannelId, onJoin, onLeave, onC
         >
           <div
             style={{
-              background: '#fff',
+              background: theme.bg.elevated,
               borderRadius: '10px',
               padding: '24px',
               width: '300px',
-              boxShadow: '0 8px 32px rgba(0,0,0,0.2)',
+              boxShadow: theme.shadow.modal,
               display: 'flex',
               flexDirection: 'column',
               gap: '16px',
+              color: theme.text.primary,
             }}
           >
             <div style={{ fontWeight: 700, fontSize: '16px' }}>Create Channel</div>
@@ -226,9 +229,11 @@ export function ChannelSidebar({ channels, activeChannelId, onJoin, onLeave, onC
               style={{
                 padding: '8px 10px',
                 fontSize: '14px',
-                border: '1px solid #ddd',
+                border: `1px solid ${theme.border.input}`,
                 borderRadius: '6px',
                 outline: 'none',
+                background: theme.bg.tertiary,
+                color: theme.text.primary,
               }}
             />
             <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
@@ -239,8 +244,9 @@ export function ChannelSidebar({ channels, activeChannelId, onJoin, onLeave, onC
                   padding: '7px 16px',
                   fontSize: '13px',
                   borderRadius: '6px',
-                  border: '1px solid #ddd',
-                  background: '#f5f5f5',
+                  border: `1px solid ${theme.border.primary}`,
+                  background: theme.bg.tertiary,
+                  color: theme.text.primary,
                   cursor: 'pointer',
                 }}
               >
@@ -254,8 +260,8 @@ export function ChannelSidebar({ channels, activeChannelId, onJoin, onLeave, onC
                   fontSize: '13px',
                   borderRadius: '6px',
                   border: 'none',
-                  background: '#4CAF50',
-                  color: '#fff',
+                  background: theme.accent.primary,
+                  color: theme.text.onAccent,
                   cursor: creating || !newName.trim() ? 'default' : 'pointer',
                   opacity: creating || !newName.trim() ? 0.6 : 1,
                 }}
@@ -273,10 +279,10 @@ export function ChannelSidebar({ channels, activeChannelId, onJoin, onLeave, onC
             position: 'fixed',
             left: contextMenu.x,
             top: contextMenu.y,
-            background: '#fff',
-            border: '1px solid #ddd',
+            background: theme.bg.elevated,
+            border: `1px solid ${theme.border.primary}`,
             borderRadius: '6px',
-            boxShadow: '0 4px 16px rgba(0,0,0,0.15)',
+            boxShadow: theme.shadow.contextMenu,
             zIndex: 1000,
             overflow: 'hidden',
             minWidth: '130px',
@@ -294,13 +300,14 @@ export function ChannelSidebar({ channels, activeChannelId, onJoin, onLeave, onC
               border: 'none',
               cursor: 'pointer',
               textAlign: 'left',
+              color: theme.text.primary,
             }}
-            onMouseEnter={(e) => ((e.currentTarget as HTMLButtonElement).style.background = '#f0f0f0')}
+            onMouseEnter={(e) => ((e.currentTarget as HTMLButtonElement).style.background = theme.bg.tertiary)}
             onMouseLeave={(e) => ((e.currentTarget as HTMLButtonElement).style.background = 'transparent')}
           >
             {contextMenu.channelId === activeChannelId ? 'Leave channel' : 'Join channel'}
           </button>
-          <div style={{ height: '1px', background: '#eee' }} />
+          <div style={{ height: '1px', background: theme.border.secondary }} />
           <button
             onClick={handleContextDelete}
             style={{
@@ -310,9 +317,9 @@ export function ChannelSidebar({ channels, activeChannelId, onJoin, onLeave, onC
               border: 'none',
               cursor: 'pointer',
               textAlign: 'left',
-              color: '#e53935',
+              color: theme.danger.primary,
             }}
-            onMouseEnter={(e) => ((e.currentTarget as HTMLButtonElement).style.background = '#fff5f5')}
+            onMouseEnter={(e) => ((e.currentTarget as HTMLButtonElement).style.background = theme.danger.hover)}
             onMouseLeave={(e) => ((e.currentTarget as HTMLButtonElement).style.background = 'transparent')}
           >
             Delete channel

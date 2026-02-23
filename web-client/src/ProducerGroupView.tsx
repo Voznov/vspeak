@@ -2,9 +2,11 @@ import { useEffect, useRef, useState } from 'react';
 import type { Device } from 'mediasoup-client';
 import MicOffIcon from './assets/mic-off.svg?react';
 import ScreenShareIcon from './assets/screen-share.svg?react';
+import { theme } from './theme';
 import type { RtpParameters, Transport } from 'mediasoup-client/types';
 import { api } from './api';
 import type { ProducerInfo, ProducerSource, UserId } from '../../libs/api/entities';
+import { getUserColor } from './utils/userColor';
 
 export type ProducerGroup = {
   userId: UserId;
@@ -109,7 +111,7 @@ export function ProducerGroupView({ group, recvTransport, device, isSelf, onLog 
           position: 'relative',
           width: 'min(100cqw, calc(100cqh * 16 / 9))',
           aspectRatio: '16 / 9',
-          background: '#111',
+          background: showVideo ? theme.bg.video : getUserColor(group.userId),
           borderRadius: '8px',
           overflow: 'hidden',
           cursor: hasVideo ? 'pointer' : 'default',
@@ -141,11 +143,12 @@ export function ProducerGroupView({ group, recvTransport, device, isSelf, onLog 
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            color: '#666',
-            fontSize: '15px',
+            color: theme.text.onAccent,
+            fontSize: '18px',
+            fontWeight: 600,
           }}
         >
-          No Video
+          {group.nickname}
         </div>
       )}
 
@@ -156,7 +159,7 @@ export function ProducerGroupView({ group, recvTransport, device, isSelf, onLog 
             top: '8px',
             left: '8px',
             background: 'rgba(0, 0, 0, 0.55)',
-            color: '#fff',
+            color: theme.text.onAccent,
             fontSize: '16px',
             padding: '4px 12px',
             borderRadius: '4px',

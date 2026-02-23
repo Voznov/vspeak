@@ -1,4 +1,5 @@
 import { createContext, useCallback, useContext, useRef, useState } from 'react';
+import { theme } from './theme';
 
 type Toast = { id: number; message: string };
 
@@ -27,13 +28,13 @@ function ToastContainer({ toasts }: { toasts: Toast[] }) {
         <div
           key={toast.id}
           style={{
-            background: 'rgba(30, 30, 30, 0.92)',
-            color: '#f0f0f0',
+            background: theme.bg.elevated,
+            color: theme.text.primary,
             padding: '8px 14px',
             borderRadius: '6px',
             fontSize: '13px',
             fontFamily: 'monospace',
-            boxShadow: '0 2px 10px rgba(0,0,0,0.35)',
+            boxShadow: theme.shadow.toast,
             lineHeight: '1.4',
             wordBreak: 'break-word',
           }}

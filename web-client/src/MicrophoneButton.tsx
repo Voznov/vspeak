@@ -4,6 +4,7 @@ import { api, getMicEnabled, setMicEnabled } from './api';
 import type { ProducerId } from '../../libs/api/entities';
 import MicIcon from './assets/mic.svg?react';
 import MicOffIcon from './assets/mic-off.svg?react';
+import { theme } from './theme';
 
 type MicrophoneButtonProps = {
   sendTransport: Transport | null;
@@ -80,8 +81,8 @@ export function MicrophoneButton({ sendTransport, onLog }: MicrophoneButtonProps
         alignItems: 'center',
         justifyContent: 'center',
         cursor: !sendTransport ? 'not-allowed' : 'pointer',
-        background: active ? '#2e7d32' : 'rgba(255,255,255,0.15)',
-        color: '#fff',
+        background: active ? theme.accent.active : theme.button.inactive,
+        color: theme.text.onAccent,
         flexShrink: 0,
       }}
     >

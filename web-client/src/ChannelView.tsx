@@ -6,6 +6,7 @@ import { api } from './api';
 import { ControlBar } from './ControlBar';
 import { ProducerGroupView, type ProducerGroup } from './ProducerGroupView';
 import { useToast } from './ToastProvider';
+import { theme } from './theme';
 import { calculateGrid } from './utils/calculateGrid';
 import type { ChannelId, ProducerInfo, ProducerSource, User, WsEvents } from '../../libs/api/entities';
 
@@ -227,9 +228,9 @@ export function ChannelView({ user, channelId, socket, channelUsers, onLeave }: 
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            background: 'rgba(0, 0, 0, 0.65)',
+            background: theme.bg.overlay,
             zIndex: 200,
-            color: '#fff',
+            color: theme.text.onAccent,
             fontSize: '15px',
           }}
         >

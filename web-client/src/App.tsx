@@ -4,6 +4,7 @@ import { ChannelSidebar } from './ChannelSidebar';
 import { ChannelView } from './ChannelView';
 import { Login } from './Login';
 import { api, clearToken, getToken } from './api';
+import { theme } from './theme';
 import type { ChannelId, ChannelWithUsers, User, WsEvents } from '../../libs/api/entities';
 
 export function App() {
@@ -165,7 +166,7 @@ export function App() {
           />
         ) : (
           <div
-            style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: '#999' }}
+            style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: theme.text.secondary }}
           >
             <div style={{ textAlign: 'center' }}>
               <div style={{ fontSize: '48px', marginBottom: '12px' }}>👈</div>

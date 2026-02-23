@@ -4,6 +4,7 @@ import { api } from './api';
 import type { ProducerId } from '../../libs/api/entities';
 import VideoIcon from './assets/video.svg?react';
 import VideoOffIcon from './assets/video-off.svg?react';
+import { theme } from './theme';
 
 type CameraButtonProps = {
   sendTransport: Transport | null;
@@ -79,8 +80,8 @@ export function CameraButton({ sendTransport, onLog }: CameraButtonProps) {
         alignItems: 'center',
         justifyContent: 'center',
         cursor: !sendTransport ? 'not-allowed' : 'pointer',
-        background: active ? '#2e7d32' : 'rgba(255,255,255,0.15)',
-        color: '#fff',
+        background: active ? theme.accent.active : theme.button.inactive,
+        color: theme.text.onAccent,
         flexShrink: 0,
       }}
     >

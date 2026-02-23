@@ -1,5 +1,6 @@
 import type { Transport } from 'mediasoup-client/types';
 import PhoneOffIcon from './assets/phone-off.svg?react';
+import { theme } from './theme';
 import { CameraButton } from './CameraButton';
 import { MicrophoneButton } from './MicrophoneButton';
 import { ScreenShareButton } from './ScreenShareButton';
@@ -25,8 +26,9 @@ export function ControlBar({ channelId, sendTransport, connecting, onLog, onLeav
         display: 'flex',
         gap: '8px',
         alignItems: 'center',
-        background: 'rgba(18, 18, 18, 0.85)',
+        background: theme.bg.controlBar,
         backdropFilter: 'blur(8px)',
+        border: `1px solid ${theme.border.primary}`,
         borderRadius: '40px',
         padding: '8px',
         zIndex: 100,
@@ -48,8 +50,8 @@ export function ControlBar({ channelId, sendTransport, connecting, onLog, onLeav
           alignItems: 'center',
           justifyContent: 'center',
           cursor: connecting ? 'not-allowed' : 'pointer',
-          background: '#c62828',
-          color: '#fff',
+          background: theme.danger.leave,
+          color: theme.text.onAccent,
           flexShrink: 0,
           opacity: connecting ? 0.6 : 1,
         }}
