@@ -79,12 +79,12 @@ export function CameraButton({ sendTransport, onLog }: CameraButtonProps) {
         alignItems: 'center',
         justifyContent: 'center',
         cursor: !sendTransport ? 'not-allowed' : 'pointer',
-        background: active ? '#e53935' : 'rgba(255,255,255,0.15)',
+        background: active ? '#2e7d32' : 'rgba(255,255,255,0.15)',
         color: '#fff',
         flexShrink: 0,
       }}
     >
-      {active ? <VideoOffIcon width={20} height={20} /> : <VideoIcon width={20} height={20} />}
+      {active ? <VideoIcon width={20} height={20} /> : <VideoOffIcon width={20} height={20} />}
     </button>
   );
 }

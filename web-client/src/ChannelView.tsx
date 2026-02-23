@@ -1,14 +1,12 @@
 import { useEffect, useRef, useState } from 'react';
 import { Device } from 'mediasoup-client';
-import PhoneOffIcon from './assets/phone-off.svg?react';
 import type { DtlsParameters, IceCandidate, IceParameters, RtpCapabilities, Transport } from 'mediasoup-client/types';
 import type { Socket } from 'socket.io-client';
 import { api } from './api';
-import { CameraButton } from './CameraButton';
-import { MicrophoneButton } from './MicrophoneButton';
+import { ControlBar } from './ControlBar';
 import { ProducerGroupView, type ProducerGroup } from './ProducerGroupView';
-import { ScreenShareButton } from './ScreenShareButton';
 import { useToast } from './ToastProvider';
+import { calculateGrid } from './utils/calculateGrid';
 import type { ChannelId, ProducerInfo, ProducerSource, User, WsEvents } from '../../libs/api/entities';
 
 type ChannelViewProps = {
@@ -46,6 +44,8 @@ export function ChannelView({ user, channelId, socket, channelUsers, onLeave }: 
 
   const sendTransportRef = useRef<Transport | null>(null);
   const recvTransportRef = useRef<Transport | null>(null);
+  const gridRef = useRef<HTMLDivElement>(null);
+  const [gridSize, setGridSize] = useState({ width: 0, height: 0 });
 
   const addLog = useToast();
 
@@ -177,22 +177,34 @@ export function ChannelView({ user, channelId, socket, channelUsers, onLeave }: 
     };
   }, [channelId]);
 
+  // Track grid container size for optimal layout calculation
+  useEffect(() => {
+    const el = gridRef.current;
+    if (!el) return;
+    const observer = new ResizeObserver(([entry]) => {
+      const { width, height } = entry.contentRect;
+      setGridSize({ width, height });
+    });
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
   const groups = groupProducers(producerInfos, channelUsers);
-  const cols = Math.max(1, Math.ceil(Math.sqrt(groups.length)));
-  const rows = Math.ceil(groups.length / cols);
+  const { columns, rows } = calculateGrid(gridSize.width, gridSize.height, groups.length, 16 / 9);
 
   return (
     <div style={{ height: '100%', display: 'flex', flexDirection: 'column', position: 'relative', overflow: 'hidden' }}>
       <div
+        ref={gridRef}
         style={{
           flex: 1,
           minHeight: 0,
           display: 'grid',
-          gridTemplateColumns: `repeat(${cols}, 1fr)`,
+          gridTemplateColumns: `repeat(${columns}, 1fr)`,
           gridTemplateRows: `repeat(${rows}, 1fr)`,
           placeItems: 'center',
           gap: '6px',
-          padding: '6px 6px 80px',
+          padding: '6px',
         }}
       >
         {groups.map((group) => (
@@ -225,48 +237,13 @@ export function ChannelView({ user, channelId, socket, channelUsers, onLeave }: 
         </div>
       )}
 
-      <div
-        key={channelId}
-        style={{
-          position: 'absolute',
-          bottom: '16px',
-          left: '50%',
-          transform: 'translateX(-50%)',
-          display: 'flex',
-          gap: '8px',
-          alignItems: 'center',
-          background: 'rgba(18, 18, 18, 0.85)',
-          backdropFilter: 'blur(8px)',
-          borderRadius: '40px',
-          padding: '8px',
-          zIndex: 100,
-        }}
-      >
-        <MicrophoneButton sendTransport={sendTransport} onLog={addLog} />
-        <CameraButton sendTransport={sendTransport} onLog={addLog} />
-        <ScreenShareButton sendTransport={sendTransport} onLog={addLog} />
-        <button
-          onClick={onLeave}
-          disabled={connecting}
-          title="Leave channel"
-          style={{
-            width: '44px',
-            height: '44px',
-            borderRadius: '50%',
-            border: 'none',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            cursor: connecting ? 'not-allowed' : 'pointer',
-            background: '#c62828',
-            color: '#fff',
-            flexShrink: 0,
-            opacity: connecting ? 0.6 : 1,
-          }}
-        >
-          <PhoneOffIcon width={20} height={20} />
-        </button>
-      </div>
+      <ControlBar
+        channelId={channelId}
+        sendTransport={sendTransport}
+        connecting={connecting}
+        onLog={addLog}
+        onLeave={onLeave}
+      />
     </div>
   );
 }

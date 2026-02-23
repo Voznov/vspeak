@@ -93,12 +93,12 @@ export function ScreenShareButton({ sendTransport, onLog }: ScreenShareButtonPro
         alignItems: 'center',
         justifyContent: 'center',
         cursor: !sendTransport ? 'not-allowed' : 'pointer',
-        background: active ? '#e53935' : 'rgba(255,255,255,0.15)',
+        background: active ? '#2e7d32' : 'rgba(255,255,255,0.15)',
         color: '#fff',
         flexShrink: 0,
       }}
     >
-      {active ? <ScreenShareOffIcon width={20} height={20} /> : <ScreenShareIcon width={20} height={20} />}
+      {active ? <ScreenShareIcon width={20} height={20} /> : <ScreenShareOffIcon width={20} height={20} />}
     </button>
   );
 }

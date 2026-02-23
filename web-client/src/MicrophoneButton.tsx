@@ -80,12 +80,12 @@ export function MicrophoneButton({ sendTransport, onLog }: MicrophoneButtonProps
         alignItems: 'center',
         justifyContent: 'center',
         cursor: !sendTransport ? 'not-allowed' : 'pointer',
-        background: active ? '#e53935' : 'rgba(255,255,255,0.15)',
+        background: active ? '#2e7d32' : 'rgba(255,255,255,0.15)',
         color: '#fff',
         flexShrink: 0,
       }}
     >
-      {active ? <MicOffIcon width={20} height={20} /> : <MicIcon width={20} height={20} />}
+      {active ? <MicIcon width={20} height={20} /> : <MicOffIcon width={20} height={20} />}
     </button>
   );
 }
