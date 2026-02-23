@@ -91,22 +91,31 @@ export function ProducerGroupView({ group, recvTransport, device, isSelf, onLog 
 
   return (
     <div
-      ref={containerRef}
-      onClick={() => void handleClick()}
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
       style={{
-        position: 'relative',
         width: '100%',
-        maxHeight: '100%',
-        aspectRatio: '16 / 9',
-        background: '#111',
-        borderRadius: '8px',
-        overflow: 'hidden',
-        cursor: hasVideo ? 'pointer' : 'default',
-        userSelect: 'none',
+        height: '100%',
+        containerType: 'size',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
       }}
     >
+      <div
+        ref={containerRef}
+        onClick={() => void handleClick()}
+        onMouseEnter={() => setHovered(true)}
+        onMouseLeave={() => setHovered(false)}
+        style={{
+          position: 'relative',
+          width: 'min(100cqw, calc(100cqh * 16 / 9))',
+          aspectRatio: '16 / 9',
+          background: '#111',
+          borderRadius: '8px',
+          overflow: 'hidden',
+          cursor: hasVideo ? 'pointer' : 'default',
+          userSelect: 'none',
+        }}
+      >
       <video
         ref={videoRef}
         autoPlay
@@ -117,7 +126,7 @@ export function ProducerGroupView({ group, recvTransport, device, isSelf, onLog 
           inset: 0,
           width: '100%',
           height: '100%',
-          objectFit: 'cover',
+          objectFit: 'contain',
           display: showVideo ? 'block' : 'none',
         }}
       />
@@ -158,6 +167,7 @@ export function ProducerGroupView({ group, recvTransport, device, isSelf, onLog 
           {group.nickname}
         </div>
       )}
+      </div>
     </div>
   );
 }
