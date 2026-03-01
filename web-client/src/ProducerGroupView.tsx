@@ -24,13 +24,22 @@ type Props = {
   onLog: (entry: string) => void;
 };
 
+const ANALYSER_FFT_SIZE = 512;
+const ANALYSER_SMOOTHING = 0.3;
+const SPEAKING_THRESHOLD = 8;   // 0–255 average frequency amplitude
+const SPEAKING_HOLD_MS = 200;   // delay before border disappears after silence
+
 export function ProducerGroupView({ group, recvTransport, device, isSelf, onLog }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const audioRef = useRef<HTMLAudioElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const connectedIdsRef = useRef(new Set<string>());
+  const audioContextRef = useRef<AudioContext | null>(null);
+  const rafRef = useRef<number | null>(null);
+  const speakingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [hasVideo, setHasVideo] = useState(false);
   const [hovered, setHovered] = useState(false);
+  const [isSpeaking, setIsSpeaking] = useState(false);
 
   // Auto-connect when transport/device become available or new producers appear
   useEffect(() => {
@@ -61,6 +70,35 @@ export function ProducerGroupView({ group, recvTransport, device, isSelf, onLog 
           // Mute own audio to prevent echo; isSelf is stable so closure capture is safe
           if (isSelf) audioRef.current.muted = true;
           try { await audioRef.current.play(); } catch (error) { onLog(`❌ Audio playback error: ${error}`); }
+
+          // Set up volume analyser — works even when the audio element is muted
+          if (rafRef.current !== null) cancelAnimationFrame(rafRef.current);
+          audioContextRef.current?.close();
+          const audioCtx = new AudioContext();
+          const analyser = audioCtx.createAnalyser();
+          analyser.fftSize = ANALYSER_FFT_SIZE;
+          analyser.smoothingTimeConstant = ANALYSER_SMOOTHING;
+          audioCtx.createMediaStreamSource(stream).connect(analyser);
+          audioContextRef.current = audioCtx;
+          const freqData = new Uint8Array(analyser.frequencyBinCount);
+          const tick = () => {
+            analyser.getByteFrequencyData(freqData);
+            const avg = freqData.reduce((a, b) => a + b, 0) / freqData.length;
+            if (avg > SPEAKING_THRESHOLD) {
+              if (speakingTimeoutRef.current !== null) {
+                clearTimeout(speakingTimeoutRef.current);
+                speakingTimeoutRef.current = null;
+              }
+              setIsSpeaking(true);
+            } else if (speakingTimeoutRef.current === null) {
+              speakingTimeoutRef.current = setTimeout(() => {
+                setIsSpeaking(false);
+                speakingTimeoutRef.current = null;
+              }, SPEAKING_HOLD_MS);
+            }
+            rafRef.current = requestAnimationFrame(tick);
+          };
+          rafRef.current = requestAnimationFrame(tick);
         } else if (info.kind === 'video' && videoRef.current) {
           videoRef.current.srcObject = stream;
           setHasVideo(true);
@@ -74,6 +112,15 @@ export function ProducerGroupView({ group, recvTransport, device, isSelf, onLog 
     const producers = [group.audio, group.video].filter((p): p is ProducerInfo => p !== undefined);
     for (const info of producers) void consume(info);
   }, [recvTransport, device, group.audio?.producerId, group.video?.producerId]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Cleanup audio analyser on unmount
+  useEffect(() => {
+    return () => {
+      if (rafRef.current !== null) cancelAnimationFrame(rafRef.current);
+      if (speakingTimeoutRef.current !== null) clearTimeout(speakingTimeoutRef.current);
+      audioContextRef.current?.close();
+    };
+  }, []);
 
   // React to video producer being removed
   useEffect(() => {
@@ -90,6 +137,9 @@ export function ProducerGroupView({ group, recvTransport, device, isSelf, onLog 
   };
 
   const showVideo = hasVideo;
+  const overlayIcon = group.source === 'display'
+    ? <ScreenShareIcon width={16} height={16} style={{ flexShrink: 0, marginRight: hovered ? '4px' : 0 }} />
+    : (group.audio ? null : <MicOffIcon width={16} height={16} style={{ flexShrink: 0, marginRight: hovered ? '4px' : 0 }} />);
 
   return (
     <div
@@ -114,6 +164,7 @@ export function ProducerGroupView({ group, recvTransport, device, isSelf, onLog 
           background: showVideo ? theme.bg.video : getUserColor(group.userId),
           borderRadius: '8px',
           overflow: 'hidden',
+          boxShadow: isSpeaking ? '0 0 0 2px white' : 'none',
           cursor: hasVideo ? 'pointer' : 'default',
           userSelect: 'none',
         }}
@@ -152,22 +203,26 @@ export function ProducerGroupView({ group, recvTransport, device, isSelf, onLog 
         </div>
       )}
 
-      {hovered && (
+      {(overlayIcon !== null || hovered) && (
         <div
           style={{
             position: 'absolute',
             top: '8px',
             left: '8px',
+            display: 'flex',
+            alignItems: 'center',
+            height: '28px',
+            boxSizing: 'border-box',
             background: 'rgba(0, 0, 0, 0.55)',
             color: theme.text.onAccent,
             fontSize: '16px',
-            padding: '4px 12px',
+            padding: '0 12px',
             borderRadius: '4px',
             transition: 'opacity 0.2s',
           }}
         >
-          {group.source === 'display' ? <ScreenShareIcon width={16} height={16} style={{ marginRight: '4px', verticalAlign: 'middle' }} /> : (group.audio ? null : <MicOffIcon width={16} height={16} style={{ marginRight: '4px', verticalAlign: 'middle' }} />)}
-          {group.nickname}
+          {overlayIcon}
+          {hovered && group.nickname}
         </div>
       )}
       </div>

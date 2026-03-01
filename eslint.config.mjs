@@ -17,7 +17,7 @@ export default [
     languageOptions: {
       parser: tsEslint.parser,
       ecmaVersion: 'latest',
-      parserOptions: { project: ['./tsconfig.json', './server/tsconfig.json', './web-client/tsconfig.json'] },
+      parserOptions: { project: ['./server/tsconfig.json', './web-client/tsconfig.json'] },
     },
     plugins: {
       '@typescript-eslint': tsEslint.plugin,

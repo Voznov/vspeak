@@ -156,9 +156,9 @@ export function ChannelSidebar({ channels, activeChannelId, onJoin, onLeave, onC
                       gap: '1px',
                     }}
                   >
-                    {channel.users.map((u) => (
+                    {channel.users.map((user) => (
                       <div
-                        key={u.id}
+                        key={user.id}
                         style={{
                           fontSize: '12px',
                           color: theme.text.primary,
@@ -170,12 +170,12 @@ export function ChannelSidebar({ channels, activeChannelId, onJoin, onLeave, onC
                       >
                         <span style={{ color: theme.accent.primary, fontSize: '8px' }}>●</span>
                         <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                          {u.nickname}
+                          {user.nickname}
                         </span>
                         <div style={{ display: 'flex', gap: '4px', flexShrink: 0, color: theme.text.secondary }}>
-                          {!u.hasMic && <MicOffIcon width={14} height={14} />}
-                          {u.hasVideo && <VideoIcon width={14} height={14} />}
-                          {u.hasScreen && <ScreenShareIcon width={14} height={14} />}
+                          {!user.hasMic && <MicOffIcon width={14} height={14} />}
+                          {user.hasVideo && <VideoIcon width={14} height={14} />}
+                          {user.hasScreen && <ScreenShareIcon width={14} height={14} />}
                         </div>
                       </div>
                     ))}

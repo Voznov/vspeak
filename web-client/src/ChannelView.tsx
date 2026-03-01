@@ -191,7 +191,7 @@ export function ChannelView({ user, channelId, socket, channelUsers, onLeave }: 
   }, []);
 
   const groups = groupProducers(producerInfos, channelUsers);
-  const { columns, rows } = calculateGrid(gridSize.width, gridSize.height, groups.length, 16 / 9);
+  const { columns, rows, blockWidth, blockHeight } = calculateGrid(gridSize.width, gridSize.height, groups.length, 16 / 9);
 
   return (
     <div style={{ height: '100%', display: 'flex', flexDirection: 'column', position: 'relative', overflow: 'hidden' }}>
@@ -200,23 +200,29 @@ export function ChannelView({ user, channelId, socket, channelUsers, onLeave }: 
         style={{
           flex: 1,
           minHeight: 0,
-          display: 'grid',
-          gridTemplateColumns: `repeat(${columns}, 1fr)`,
-          gridTemplateRows: `repeat(${rows}, 1fr)`,
-          placeItems: 'center',
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'center',
+          alignItems: 'center',
           gap: '6px',
           padding: '6px',
+          boxSizing: 'border-box',
         }}
       >
-        {groups.map((group) => (
-          <ProducerGroupView
-            key={`${group.userId}:${group.source}`}
-            group={group}
-            recvTransport={recvTransport}
-            device={deviceRef.current}
-            isSelf={group.userId === user.id}
-            onLog={addLog}
-          />
+        {Array.from({ length: rows }, (_, rowIndex) => (
+          <div key={rowIndex} style={{ display: 'flex', gap: '6px' }}>
+            {groups.slice(rowIndex * columns, (rowIndex + 1) * columns).map((group) => (
+              <div key={`${group.userId}:${group.source}`} style={{ width: blockWidth, height: blockHeight, flexShrink: 0 }}>
+                <ProducerGroupView
+                  group={group}
+                  recvTransport={recvTransport}
+                  device={deviceRef.current}
+                  isSelf={group.userId === user.id}
+                  onLog={addLog}
+                />
+              </div>
+            ))}
+          </div>
         ))}
       </div>
 
