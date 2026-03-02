@@ -1,8 +1,6 @@
 services:
   server:
-    build:
-      context: .
-      dockerfile: server/Dockerfile
+    image: ghcr.io/voznov/vspeak-server:latest
     expose:
       - "3000"
     ports:
@@ -36,9 +34,7 @@ services:
       start_period: 40s
 
   web-client:
-    build:
-      context: .
-      dockerfile: web-client/Dockerfile
+    image: ghcr.io/voznov/vspeak-web-client:latest
     expose:
       - "80"
     restart: unless-stopped
