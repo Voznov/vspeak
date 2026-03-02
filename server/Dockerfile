@@ -30,7 +30,7 @@ COPY --from=deps /app/node_modules ./node_modules
 COPY --from=deps /app/server/node_modules ./server/node_modules
 
 # Copy workspace configuration
-COPY package.json pnpm-workspace.yaml tsconfig.json ./
+COPY package.json pnpm-workspace.yaml ./
 
 # Build backend
 RUN pnpm --filter server build
