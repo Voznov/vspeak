@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Device } from 'mediasoup-client';
 import type { DtlsParameters, IceCandidate, IceParameters, RtpCapabilities, Transport } from 'mediasoup-client/types';
 import type { Socket } from 'socket.io-client';
-import { api } from './api';
+import { api, getDeafEnabled } from './api';
 import { ControlBar } from './ControlBar';
 import { ProducerGroupView, type ProducerGroup } from './ProducerGroupView';
 import { useToast } from './ToastProvider';
@@ -42,6 +42,7 @@ export function ChannelView({ user, channelId, socket, channelUsers, onLeave }: 
   const [recvTransport, setRecvTransport] = useState<Transport | null>(null);
   const [producerInfos, setProducerInfos] = useState<ProducerInfo[]>([]);
   const [connecting, setConnecting] = useState(true);
+  const [isDeaf, setIsDeaf] = useState(() => getDeafEnabled());
 
   const sendTransportRef = useRef<Transport | null>(null);
   const recvTransportRef = useRef<Transport | null>(null);
@@ -160,6 +161,11 @@ export function ChannelView({ user, channelId, socket, channelUsers, onLeave }: 
 
       recvTransportRef.current = newRecvTransport;
       setRecvTransport(newRecvTransport);
+
+      // Sync deaf state to server — UserInfo is reset on each join
+      if (getDeafEnabled()) {
+        void api.setDeaf({ isDeaf: true });
+      }
     } catch (error) {
       addLog(`❌ Error: ${error}`);
     } finally {
@@ -218,6 +224,7 @@ export function ChannelView({ user, channelId, socket, channelUsers, onLeave }: 
                   recvTransport={recvTransport}
                   device={deviceRef.current}
                   isSelf={group.userId === user.id}
+                  isDeaf={isDeaf}
                   onLog={addLog}
                 />
               </div>
@@ -248,6 +255,8 @@ export function ChannelView({ user, channelId, socket, channelUsers, onLeave }: 
         channelId={channelId}
         sendTransport={sendTransport}
         connecting={connecting}
+        isDeaf={isDeaf}
+        onDeafToggle={setIsDeaf}
         onLog={addLog}
         onLeave={onLeave}
       />

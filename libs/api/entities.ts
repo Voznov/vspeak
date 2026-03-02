@@ -19,6 +19,7 @@ export type UserMediaStatus = {
   hasMic: boolean;
   hasVideo: boolean;
   hasScreen: boolean;
+  isDeaf: boolean;
 };
 
 export type UserWithStatus = User & UserMediaStatus;
@@ -200,6 +201,14 @@ export type CloseProducerRequest = {
 };
 
 export type CloseProducerResponse = {
+  success: boolean;
+};
+
+export type SetDeafRequest = {
+  isDeaf: boolean;
+};
+
+export type SetDeafResponse = {
   success: boolean;
 };
 

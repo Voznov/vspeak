@@ -17,6 +17,8 @@ import {
   type ProduceStreamResponse,
   type ResumeConsumerRequest,
   type ResumeConsumerResponse,
+  type SetDeafRequest,
+  type SetDeafResponse,
 } from '../../../libs/api/entities';
 import { getUserId } from '../auth/cls.helper';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
@@ -79,6 +81,15 @@ export class WebRtcController extends Api.Voice {
     const userId = getUserId();
     const { consumerId } = request;
     await this.webrtcService.pauseConsuming(userId, consumerId);
+
+    return { success: true };
+  }
+
+  async setDeaf(@Body() request: SetDeafRequest): Promise<SetDeafResponse> {
+    const userId = getUserId();
+    const { isDeaf } = request;
+
+    this.webrtcService.setIsDeaf(userId, isDeaf);
 
     return { success: true };
   }

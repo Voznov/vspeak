@@ -2,6 +2,7 @@ import type { Transport } from 'mediasoup-client/types';
 import PhoneOffIcon from './assets/phone-off.svg?react';
 import { theme } from './theme';
 import { CameraButton } from './CameraButton';
+import { DeafenButton } from './DeafenButton';
 import { MicrophoneButton } from './MicrophoneButton';
 import { ScreenShareButton } from './ScreenShareButton';
 import type { ChannelId } from '../../libs/api/entities';
@@ -10,11 +11,13 @@ type ControlBarProps = {
   channelId: ChannelId;
   sendTransport: Transport | null;
   connecting: boolean;
+  isDeaf: boolean;
+  onDeafToggle: (isDeaf: boolean) => void;
   onLog: (entry: string) => void;
   onLeave: () => void;
 };
 
-export function ControlBar({ channelId, sendTransport, connecting, onLog, onLeave }: ControlBarProps) {
+export function ControlBar({ channelId, sendTransport, connecting, isDeaf, onDeafToggle, onLog, onLeave }: ControlBarProps) {
   return (
     <div
       key={channelId}
@@ -34,6 +37,7 @@ export function ControlBar({ channelId, sendTransport, connecting, onLog, onLeav
         zIndex: 100,
       }}
     >
+      <DeafenButton isDeaf={isDeaf} onToggle={onDeafToggle} />
       <MicrophoneButton sendTransport={sendTransport} onLog={onLog} />
       <CameraButton sendTransport={sendTransport} onLog={onLog} />
       <ScreenShareButton sendTransport={sendTransport} onLog={onLog} />

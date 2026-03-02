@@ -21,6 +21,7 @@ type Props = {
   recvTransport: Transport | null;
   device: Device | null;
   isSelf: boolean;
+  isDeaf: boolean;
   onLog: (entry: string) => void;
 };
 
@@ -29,7 +30,7 @@ const ANALYSER_SMOOTHING = 0.3;
 const SPEAKING_THRESHOLD = 8;   // 0–255 average frequency amplitude
 const SPEAKING_HOLD_MS = 200;   // delay before border disappears after silence
 
-export function ProducerGroupView({ group, recvTransport, device, isSelf, onLog }: Props) {
+export function ProducerGroupView({ group, recvTransport, device, isSelf, isDeaf, onLog }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const audioRef = useRef<HTMLAudioElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -67,8 +68,7 @@ export function ProducerGroupView({ group, recvTransport, device, isSelf, onLog 
         if (info.kind === 'audio' && audioRef.current) {
           audioRef.current.srcObject = stream;
           audioRef.current.volume = 1.0;
-          // Mute own audio to prevent echo; isSelf is stable so closure capture is safe
-          if (isSelf) audioRef.current.muted = true;
+          audioRef.current.muted = isSelf || isDeaf;
           try { await audioRef.current.play(); } catch (error) { onLog(`❌ Audio playback error: ${error}`); }
 
           // Set up volume analyser — works even when the audio element is muted
@@ -113,6 +113,13 @@ export function ProducerGroupView({ group, recvTransport, device, isSelf, onLog 
     for (const info of producers) void consume(info);
   }, [recvTransport, device, group.audio?.producerId, group.video?.producerId]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Sync muted state when isDeaf changes after audio is already connected
+  useEffect(() => {
+    if (audioRef.current) {
+      audioRef.current.muted = isSelf || isDeaf;
+    }
+  }, [isDeaf, isSelf]);
+
   // Cleanup audio analyser on unmount
   useEffect(() => {
     return () => {
@@ -136,7 +143,6 @@ export function ProducerGroupView({ group, recvTransport, device, isSelf, onLog 
     }
   };
 
-  const showVideo = hasVideo;
   const overlayIcon = group.source === 'display'
     ? <ScreenShareIcon width={16} height={16} style={{ flexShrink: 0, marginRight: hovered ? '4px' : 0 }} />
     : (group.audio ? null : <MicOffIcon width={16} height={16} style={{ flexShrink: 0, marginRight: hovered ? '4px' : 0 }} />);
@@ -161,7 +167,7 @@ export function ProducerGroupView({ group, recvTransport, device, isSelf, onLog 
           position: 'relative',
           width: 'min(100cqw, calc(100cqh * 16 / 9))',
           aspectRatio: '16 / 9',
-          background: showVideo ? theme.bg.video : getUserColor(group.userId),
+          background: hasVideo ? theme.bg.video : getUserColor(group.userId),
           borderRadius: '8px',
           overflow: 'hidden',
           boxShadow: isSpeaking ? '0 0 0 2px white' : 'none',
@@ -180,13 +186,13 @@ export function ProducerGroupView({ group, recvTransport, device, isSelf, onLog 
           width: '100%',
           height: '100%',
           objectFit: 'contain',
-          display: showVideo ? 'block' : 'none',
+          display: hasVideo ? 'block' : 'none',
         }}
       />
 
       <audio ref={audioRef} autoPlay playsInline style={{ display: 'none' }} />
 
-      {!showVideo && (
+      {!hasVideo && (
         <div
           style={{
             position: 'absolute',

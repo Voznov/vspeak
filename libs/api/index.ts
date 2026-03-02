@@ -31,6 +31,8 @@ import {
   type ProduceStreamResponse,
   type ResumeConsumerRequest,
   type ResumeConsumerResponse,
+  type SetDeafRequest,
+  type SetDeafResponse,
 } from './entities';
 import { createRpcInterface } from '../rpc.interface';
 
@@ -57,6 +59,7 @@ abstract class Voice {
   abstract consumeStream(_: ConsumeStreamRequest): Promise<ConsumeStreamResponse>;
   abstract resumeConsumer(_: ResumeConsumerRequest): Promise<ResumeConsumerResponse>;
   abstract pauseConsumer(_: PauseConsumerRequest): Promise<PauseConsumerResponse>;
+  abstract setDeaf(_: SetDeafRequest): Promise<SetDeafResponse>;
 }
 
 export class Api extends createRpcInterface({ Auth, Channels, Voice }) {}

@@ -24,6 +24,7 @@ type UserInfo = {
   channelId: ChannelId;
   producers: Map<ProducerId, Producer<{ source: ProducerSource }>>;
   consumers: Map<ConsumerId, Consumer>;
+  isDeaf: boolean;
 };
 
 type ChannelInfo = {
@@ -171,6 +172,7 @@ export class WebRTCService implements OnModuleInit {
       channelId,
       producers: new Map(),
       consumers: new Map(),
+      isDeaf: false,
     };
     this.userInfos.set(userId, userInfo);
 
@@ -276,7 +278,7 @@ export class WebRTCService implements OnModuleInit {
 
   public getUserMediaStatus(userId: UserId): UserMediaStatus {
     const userInfo = this.userInfos.get(userId);
-    if (!userInfo) return { hasMic: false, hasVideo: false, hasScreen: false };
+    if (!userInfo) return { hasMic: false, hasVideo: false, hasScreen: false, isDeaf: false };
     let hasMic = false;
     let hasVideo = false;
     let hasScreen = false;
@@ -296,7 +298,17 @@ export class WebRTCService implements OnModuleInit {
       }
     }
 
-    return { hasMic, hasVideo, hasScreen };
+    return { hasMic, hasVideo, hasScreen, isDeaf: userInfo.isDeaf };
+  }
+
+  public setIsDeaf(userId: UserId, isDeaf: boolean): void {
+    const userInfo = this.userInfos.get(userId);
+    if (!userInfo) {
+      throw new HttpException('User not found', HttpStatus.NOT_FOUND);
+    }
+
+    userInfo.isDeaf = isDeaf;
+    this.wsGateway.emitToAll('channelUserStatusChanged', { channelId: userInfo.channelId, userId, status: this.getUserMediaStatus(userId) });
   }
 
   public async consumeStream(userId: UserId, producerUserId: UserId, producerId: ProducerId, rtpCapabilities: RtpCapabilities) {

@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import type { ChannelId, ChannelWithUsers } from '../../libs/api/entities';
+import HeadphonesOffIcon from './assets/headphones-off.svg?react';
 import MicOffIcon from './assets/mic-off.svg?react';
 import ScreenShareIcon from './assets/screen-share.svg?react';
 import VideoIcon from './assets/video.svg?react';
@@ -176,6 +177,7 @@ export function ChannelSidebar({ channels, activeChannelId, onJoin, onLeave, onC
                           {!user.hasMic && <MicOffIcon width={14} height={14} />}
                           {user.hasVideo && <VideoIcon width={14} height={14} />}
                           {user.hasScreen && <ScreenShareIcon width={14} height={14} />}
+                          {user.isDeaf && <HeadphonesOffIcon width={14} height={14} />}
                         </div>
                       </div>
                     ))}
