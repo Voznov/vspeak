@@ -26,8 +26,9 @@
     "strictBindCallApply": false,
     "strictFunctionTypes": false,
     "strictPropertyInitialization": false,
-    "noImplicitThis": false
+    "noImplicitThis": false,
+    "baseUrl": "."
   },
-  "include": ["src/**/*", "../libs/**/*"],
+  "include": ["src/**/*", "../libs/**/*", "libs/**/*"],
   "exclude": ["dist", "node_modules"]
 }

@@ -5,12 +5,7 @@ type GridResult = {
   blockHeight: number;
 };
 
-export const calculateGrid = (
-  W: number,
-  H: number,
-  N: number,
-  aspectRatio: number,
-): GridResult => {
+export const calculateGrid = (W: number, H: number, N: number, aspectRatio: number): GridResult => {
   let best: GridResult = {
     columns: 1,
     rows: N,
