@@ -1,28 +1,27 @@
 import { Body, UseGuards } from '@nestjs/common';
-import type { DtlsParameters, RtpCapabilities, RtpParameters } from 'mediasoup/types';
+import {
+  CloseProducerRequestDto,
+  CloseProducerResponseDto,
+  ConnectTransportRequestDto,
+  ConnectTransportResponseDto,
+  ConsumeStreamRequestDto,
+  ConsumeStreamResponseDto,
+  GetChannelInfoRequestDto,
+  GetChannelInfoResponseDto,
+  PauseConsumerRequestDto,
+  PauseConsumerResponseDto,
+  ProduceStreamRequestDto,
+  ProduceStreamResponseDto,
+  ResumeConsumerRequestDto,
+  ResumeConsumerResponseDto,
+  SetDeafRequestDto,
+  SetDeafResponseDto,
+} from './webrtc.dto';
 import { WebRTCService } from './webrtc.service';
 import { Api } from '../../../libs/api';
-import {
-  type CloseProducerRequest,
-  type CloseProducerResponse,
-  type ConnectTransportRequest,
-  type ConnectTransportResponse,
-  type ConsumeStreamRequest,
-  type ConsumeStreamResponse,
-  type GetChannelInfoRequest,
-  type GetChannelInfoResponse,
-  type PauseConsumerRequest,
-  type PauseConsumerResponse,
-  type ProduceStreamRequest,
-  type ProduceStreamResponse,
-  type ResumeConsumerRequest,
-  type ResumeConsumerResponse,
-  type SetDeafRequest,
-  type SetDeafResponse,
-} from '../../../libs/api/entities';
 import { getUserId } from '../auth/cls.helper';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
-import { RestController } from '../utils/decorators';
+import { Rest, RestController } from '../utils/decorators';
 
 @RestController()
 @UseGuards(JwtAuthGuard)
@@ -31,65 +30,63 @@ export class WebRtcController extends Api.Voice {
     super();
   }
 
-  async getChannelInfo(@Body() request: GetChannelInfoRequest): Promise<GetChannelInfoResponse> {
+  @Rest({ response: GetChannelInfoResponseDto })
+  async getChannelInfo(@Body() request: GetChannelInfoRequestDto): Promise<GetChannelInfoResponseDto> {
     const userId = getUserId();
-    const { channelId } = request;
 
-    return this.webrtcService.getChannelInfo(userId, channelId);
+    return this.webrtcService.getChannelInfo(userId, request.channelId);
   }
 
-  async connectTransport(@Body() request: ConnectTransportRequest): Promise<ConnectTransportResponse> {
+  @Rest({ response: ConnectTransportResponseDto })
+  async connectTransport(@Body() request: ConnectTransportRequestDto): Promise<ConnectTransportResponseDto> {
     const userId = getUserId();
-    const { transportId, dtlsParameters } = request;
-    await this.webrtcService.connectTransport(userId, transportId, dtlsParameters as DtlsParameters);
+    await this.webrtcService.connectTransport(userId, request.transportId, request.dtlsParameters);
 
     return { success: true };
   }
 
-  async produceStream(@Body() request: ProduceStreamRequest): Promise<ProduceStreamResponse> {
+  @Rest({ response: ProduceStreamResponseDto })
+  async produceStream(@Body() request: ProduceStreamRequestDto): Promise<ProduceStreamResponseDto> {
     const userId = getUserId();
-    const { kind, source, rtpParameters } = request;
 
-    return this.webrtcService.produceStream(userId, kind, source, rtpParameters as RtpParameters);
+    return this.webrtcService.produceStream(userId, request.kind, request.source, request.rtpParameters);
   }
 
-  async closeProducer(@Body() request: CloseProducerRequest): Promise<CloseProducerResponse> {
+  @Rest({ response: CloseProducerResponseDto })
+  async closeProducer(@Body() request: CloseProducerRequestDto): Promise<CloseProducerResponseDto> {
     const userId = getUserId();
-    const { producerId } = request;
-
-    this.webrtcService.closeProducer(userId, producerId);
+    this.webrtcService.closeProducer(userId, request.producerId);
 
     return { success: true };
   }
 
-  async consumeStream(@Body() request: ConsumeStreamRequest): Promise<ConsumeStreamResponse> {
+  @Rest({ response: ConsumeStreamResponseDto })
+  async consumeStream(@Body() request: ConsumeStreamRequestDto): Promise<ConsumeStreamResponseDto> {
     const userId = getUserId();
-    const { producerUserId, producerId, rtpCapabilities } = request;
 
-    return this.webrtcService.consumeStream(userId, producerUserId, producerId, rtpCapabilities as RtpCapabilities);
+    return this.webrtcService.consumeStream(userId, request.producerUserId, request.producerId, request.rtpCapabilities);
   }
 
-  async resumeConsumer(@Body() request: ResumeConsumerRequest): Promise<ResumeConsumerResponse> {
+  @Rest({ response: ResumeConsumerResponseDto })
+  async resumeConsumer(@Body() request: ResumeConsumerRequestDto): Promise<ResumeConsumerResponseDto> {
     const userId = getUserId();
-    const { consumerId } = request;
-    await this.webrtcService.resumeConsuming(userId, consumerId);
+    await this.webrtcService.resumeConsuming(userId, request.consumerId);
 
     return { success: true };
   }
 
-  async pauseConsumer(@Body() request: PauseConsumerRequest): Promise<PauseConsumerResponse> {
+  @Rest({ response: PauseConsumerResponseDto })
+  async pauseConsumer(@Body() request: PauseConsumerRequestDto): Promise<PauseConsumerResponseDto> {
     const userId = getUserId();
-    const { consumerId } = request;
-    await this.webrtcService.pauseConsuming(userId, consumerId);
+    await this.webrtcService.pauseConsuming(userId, request.consumerId);
 
     return { success: true };
   }
 
-  async setDeaf(@Body() request: SetDeafRequest): Promise<SetDeafResponse> {
+  @Rest({ response: SetDeafResponseDto })
+  async setDeaf(@Body() request: SetDeafRequestDto): Promise<SetDeafResponseDto> {
     const userId = getUserId();
-    const { isDeaf } = request;
-
-    this.webrtcService.setIsDeaf(userId, isDeaf);
+    this.webrtcService.setIsDeaf(userId, request.isDeaf);
 
     return { success: true };
   }

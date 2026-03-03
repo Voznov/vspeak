@@ -1,10 +1,16 @@
-import { applyDecorators, Controller, Post } from '@nestjs/common';
-import { dash } from 'radash';
-import { getMethods } from './object';
+import { applyDecorators, Controller, Post, type Type } from '@nestjs/common';
+import { ApiOkResponse, ApiOperation } from '@nestjs/swagger';
+import { dash, title } from 'radash';
 
-export const RestController = () =>
-  applyDecorators(Controller(), (target: Function): void => {
-    getMethods(target).forEach((method) => {
-      Reflect.decorate([Post(dash(method))], target.prototype, method, Reflect.getOwnPropertyDescriptor(target.prototype, method));
-    });
-  });
+export const RestController = (prefix?: string) => Controller(prefix ?? '');
+
+export const Rest =
+  (options: { response: Type }): MethodDecorator =>
+  (target, propertyKey, descriptor) => {
+    const method = String(propertyKey);
+    applyDecorators(Post(dash(method)), ApiOperation({ operationId: method, summary: title(dash(method)) }), ApiOkResponse({ type: options.response }))(
+      target,
+      propertyKey,
+      descriptor,
+    );
+  };

@@ -60,7 +60,7 @@ export function ProducerGroupView({ group, recvTransport, device, isSelf, isDeaf
           id: consumerId,
           producerId: info.producerId,
           kind: info.kind,
-          rtpParameters: rtpParameters as RtpParameters,
+          rtpParameters,
         });
         await api.resumeConsumer({ consumerId });
 

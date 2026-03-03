@@ -107,11 +107,27 @@ export type TransportId = Branded<string, 'TransportId'>;
 export type ProducerId = Branded<string, 'ProducerId'>;
 export type ConsumerId = Branded<string, 'ConsumerId'>;
 
+export type FingerprintAlgorithm = 'sha-1' | 'sha-224' | 'sha-256' | 'sha-384' | 'sha-512';
+export type DtlsRole = 'auto' | 'client' | 'server';
+export type DtlsFingerprint = { algorithm: FingerprintAlgorithm; value: string };
+export type DtlsParameters = { role?: DtlsRole; fingerprints: DtlsFingerprint[] };
+export type IceParameters = { usernameFragment: string; password: string; iceLite?: boolean };
+export type IceCandidate = {
+  foundation: string;
+  priority: number;
+  ip: string;
+  address: string;
+  protocol: 'udp' | 'tcp';
+  port: number;
+  type: 'host';
+  tcpType?: 'passive';
+};
+
 export type TransportInfo = {
   transportId: TransportId;
-  iceParameters: unknown;
-  iceCandidates: unknown[];
-  dtlsParameters: unknown;
+  iceParameters: IceParameters;
+  iceCandidates: IceCandidate[];
+  dtlsParameters: DtlsParameters;
 };
 
 export type ProducerKind = 'audio' | 'video';
@@ -124,12 +140,93 @@ export type ProducerInfo = {
   userId: UserId;
 };
 
+export type RtcpFeedback = { type: string; parameter?: string };
+export type RtpHeaderExtensionDirection = 'sendrecv' | 'sendonly' | 'recvonly' | 'inactive';
+export type RtpHeaderExtensionUri =
+  | 'urn:ietf:params:rtp-hdrext:sdes:mid'
+  | 'urn:ietf:params:rtp-hdrext:sdes:rtp-stream-id'
+  | 'urn:ietf:params:rtp-hdrext:sdes:repaired-rtp-stream-id'
+  | 'http://www.webrtc.org/experiments/rtp-hdrext/abs-send-time'
+  | 'http://www.ietf.org/id/draft-holmer-rmcat-transport-wide-cc-extensions-01'
+  | 'urn:ietf:params:rtp-hdrext:ssrc-audio-level'
+  | 'https://aomediacodec.github.io/av1-rtp-spec/#dependency-descriptor-rtp-header-extension'
+  | 'urn:3gpp:video-orientation'
+  | 'http://www.webrtc.org/experiments/rtp-hdrext/abs-capture-time'
+  | 'urn:ietf:params:rtp-hdrext:toffset'
+  | 'http://www.webrtc.org/experiments/rtp-hdrext/playout-delay'
+  | 'urn:mediasoup:params:rtp-hdrext:packet-id';
+
+export type RtpCodecCapability = {
+  kind: ProducerKind;
+  mimeType: string;
+  preferredPayloadType: number;
+  clockRate: number;
+  channels?: number;
+  parameters?: Record<string, unknown>;
+  rtcpFeedback?: RtcpFeedback[];
+};
+
+export type RtpHeaderExtension = {
+  kind: ProducerKind;
+  uri: RtpHeaderExtensionUri;
+  preferredId: number;
+  preferredEncrypt?: boolean;
+  direction?: RtpHeaderExtensionDirection;
+};
+
+export type RtpCapabilities = {
+  codecs?: RtpCodecCapability[];
+  headerExtensions?: RtpHeaderExtension[];
+};
+
+export type RtpCodecParameters = {
+  mimeType: string;
+  payloadType: number;
+  clockRate: number;
+  channels?: number;
+  parameters?: Record<string, unknown>;
+  rtcpFeedback?: RtcpFeedback[];
+};
+
+export type RtpHeaderExtensionParameters = {
+  uri: RtpHeaderExtensionUri;
+  id: number;
+  encrypt?: boolean;
+  parameters?: Record<string, unknown>;
+};
+
+export type RtpEncodingParameters = {
+  ssrc?: number;
+  rid?: string;
+  codecPayloadType?: number;
+  rtx?: { ssrc: number };
+  dtx?: boolean;
+  scalabilityMode?: string;
+  scaleResolutionDownBy?: number;
+  maxBitrate?: number;
+  maxFramerate?: number;
+  adaptivePtime?: boolean;
+  priority?: 'very-low' | 'low' | 'medium' | 'high';
+  networkPriority?: 'very-low' | 'low' | 'medium' | 'high';
+};
+
+export type RtcpParameters = { cname?: string; reducedSize?: boolean };
+
+export type RtpParameters = {
+  mid?: string;
+  codecs: RtpCodecParameters[];
+  headerExtensions?: RtpHeaderExtensionParameters[];
+  encodings?: RtpEncodingParameters[];
+  rtcp?: RtcpParameters;
+  msid?: string;
+};
+
 export type GetChannelInfoRequest = {
   channelId: ChannelId;
 };
 
 export type GetChannelInfoResponse = {
-  capabilities: unknown; // mediasoup RtpCapabilities
+  capabilities: RtpCapabilities;
   producerInfos: ProducerInfo[];
 };
 
@@ -150,7 +247,7 @@ export type DisconnectUserResponse = {
 
 export type ConnectTransportRequest = {
   transportId: TransportId;
-  dtlsParameters: unknown;
+  dtlsParameters: DtlsParameters;
 };
 
 export type ConnectTransportResponse = {
@@ -160,7 +257,7 @@ export type ConnectTransportResponse = {
 export type ProduceStreamRequest = {
   kind: ProducerKind;
   source: ProducerSource;
-  rtpParameters: unknown;
+  rtpParameters: RtpParameters;
 };
 
 export type ProduceStreamResponse = {
@@ -170,14 +267,14 @@ export type ProduceStreamResponse = {
 export type ConsumeStreamRequest = {
   producerUserId: UserId;
   producerId: ProducerId;
-  rtpCapabilities: unknown;
+  rtpCapabilities: RtpCapabilities;
 };
 
 export type ConsumeStreamResponse = {
   consumerId: ConsumerId;
   producerId: ProducerId;
   kind: ProducerKind;
-  rtpParameters: unknown;
+  rtpParameters: RtpParameters;
 };
 
 export type ResumeConsumerRequest = {

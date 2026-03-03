@@ -92,7 +92,7 @@ export function ChannelView({ user, channelId, socket, channelUsers, onLeave }: 
 
     const device = new Device();
     const { capabilities, producerInfos: infos } = await api.getChannelInfo({ channelId });
-    await device.load({ routerRtpCapabilities: capabilities as RtpCapabilities });
+    await device.load({ routerRtpCapabilities: capabilities });
     deviceRef.current = device;
     setProducerInfos(infos);
 
@@ -115,9 +115,9 @@ export function ChannelView({ user, channelId, socket, channelUsers, onLeave }: 
       // Create send transport
       const newSendTransport = device.createSendTransport({
         id: sendData.transportId,
-        iceParameters: sendData.iceParameters as IceParameters,
-        iceCandidates: sendData.iceCandidates as IceCandidate[],
-        dtlsParameters: sendData.dtlsParameters as DtlsParameters,
+        iceParameters: sendData.iceParameters,
+        iceCandidates: sendData.iceCandidates,
+        dtlsParameters: sendData.dtlsParameters,
       });
 
       newSendTransport.on('connect', async ({ dtlsParameters }, callback, errback) => {
@@ -145,9 +145,9 @@ export function ChannelView({ user, channelId, socket, channelUsers, onLeave }: 
       // Create recv transport
       const newRecvTransport = device.createRecvTransport({
         id: recvData.transportId,
-        iceParameters: recvData.iceParameters as IceParameters,
-        iceCandidates: recvData.iceCandidates as IceCandidate[],
-        dtlsParameters: recvData.dtlsParameters as DtlsParameters,
+        iceParameters: recvData.iceParameters,
+        iceCandidates: recvData.iceCandidates,
+        dtlsParameters: recvData.dtlsParameters,
       });
 
       newRecvTransport.on('connect', async ({ dtlsParameters }, callback, errback) => {

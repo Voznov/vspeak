@@ -1,11 +1,11 @@
 import { Body, HttpException, HttpStatus, UseGuards } from '@nestjs/common';
+import { AdminLoginRequestDto, AdminLoginResponseDto, GetMeResponseDto, LoginRequestDto, LoginResponseDto } from './auth.dto';
 import { AuthService } from './auth.service';
 import { getUserId } from './cls.helper';
 import { JwtAuthGuard } from './jwt-auth.guard';
 import { Api } from '../../../libs/api';
-import { type AdminLoginRequest, type AdminLoginResponse, type GetMeResponse, type LoginRequest, type LoginResponse } from '../../../libs/api/entities';
 import { ENV } from '../env';
-import { RestController } from '../utils/decorators';
+import { Rest, RestController } from '../utils/decorators';
 
 @RestController()
 export class AuthController extends Api.Auth {
@@ -13,45 +13,43 @@ export class AuthController extends Api.Auth {
     super();
   }
 
-  async login(@Body() request: LoginRequest): Promise<LoginResponse> {
+  @Rest({ response: LoginResponseDto })
+  async login(@Body() request: LoginRequestDto): Promise<LoginResponseDto> {
     const { nickname } = request;
 
-    // Check if nickname is already taken
     const existingUser = this.authService.getUserByNickname(nickname);
     if (existingUser) {
       throw new HttpException('Nickname already taken', HttpStatus.CONFLICT);
     }
 
-    // Create new user
     const user = this.authService.createUser(nickname, 'user');
     const token = this.authService.generateToken(user.id);
 
     return { token, user };
   }
 
-  async adminLogin(@Body() request: AdminLoginRequest): Promise<AdminLoginResponse> {
+  @Rest({ response: AdminLoginResponseDto })
+  async adminLogin(@Body() request: AdminLoginRequestDto): Promise<AdminLoginResponseDto> {
     const { nickname, adminKey } = request;
 
-    // Verify admin key
     if (adminKey !== ENV.ADMIN_KEY) {
       throw new HttpException('Invalid admin key', HttpStatus.FORBIDDEN);
     }
 
-    // Check if nickname is already taken
     const existingUser = this.authService.getUserByNickname(nickname);
     if (existingUser) {
       throw new HttpException('Nickname already taken', HttpStatus.CONFLICT);
     }
 
-    // Create new admin user
     const user = this.authService.createUser(nickname, 'admin');
     const token = this.authService.generateToken(user.id);
 
     return { token, user };
   }
 
+  @Rest({ response: GetMeResponseDto })
   @UseGuards(JwtAuthGuard)
-  async getMe(): Promise<GetMeResponse> {
+  async getMe(): Promise<GetMeResponseDto> {
     const userId = getUserId();
     const user = this.authService.getUser(userId);
 
