@@ -58,8 +58,11 @@ export const api = new Proxy(new Api(), {
         });
 
         if (!response.ok) {
-          const errorText = await response.text();
-          throw new Error(`HTTP ${response.status}: ${errorText}`);
+          const body = await response.json().catch(() => null);
+          if (typeof body === 'object' && body && 'errors' in body && Array.isArray(body.errors) && body.errors.length > 0) {
+            throw new Error(`Error${body.errors.length > 1 ? 's' : ''}:\n${body.errors.join('\n')}`);
+          }
+          throw new Error(`HTTP ${response.status}`);
         }
 
         return await response.json();

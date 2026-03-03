@@ -2,6 +2,7 @@ import { NestFactory } from '@nestjs/core';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { AppModule } from './app.module';
 import { ENV } from './env';
+import { ExceptionFilter } from './exception-filter';
 import { ZodValidationPipe } from '../libs/validation';
 
 const KEEP_ALIVE_TIMEOUT = 5000;
@@ -17,6 +18,7 @@ async function bootstrap() {
   app.enableCors();
   app.enableShutdownHooks();
 
+  app.useGlobalFilters(new ExceptionFilter());
   app.useGlobalPipes(new ZodValidationPipe());
 
   const swaggerDocument = SwaggerModule.createDocument(app, new DocumentBuilder().setTitle('VSpeak API').setVersion('1.0').build());
