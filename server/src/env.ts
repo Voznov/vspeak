@@ -11,7 +11,7 @@ const envSchema = z.object({
   JWT_SECRET: z.string().min(32),
   ADMIN_KEY: z.string().min(32),
   MEDIASOUP_LISTEN_IP: z.ipv4(),
-  MEDIASOUP_ANNOUNCED_IP: z.ipv4(),
+  MEDIASOUP_ANNOUNCED_IP: z.string().min(1),
   MEDIASOUP_MIN_PORT: zPort,
   MEDIASOUP_MAX_PORT: zPort,
   POSTGRES_HOST: z.string(),
