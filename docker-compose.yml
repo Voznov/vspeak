@@ -1,10 +1,29 @@
 services:
+  postgres:
+    image: postgres:16
+    restart: unless-stopped
+    container_name: vspeak_postgres
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}']
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
   server:
     image: ghcr.io/voznov/vspeak-server:latest
     expose:
       - "3000"
     ports:
       - "40000-40999:40000-40999/udp"
+    depends_on:
+      postgres:
+        condition: service_healthy
     environment:
       # JWT secret
       # Generate with: openssl rand -base64 32
@@ -25,6 +44,13 @@ services:
       # mediasoup RTC port range (default: 40000-40999)
       MEDIASOUP_MIN_PORT: 40000
       MEDIASOUP_MAX_PORT: 40999
+
+      # PostgreSQL connection
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3000"]
@@ -50,3 +76,6 @@ services:
       - server
       - web-client
     restart: unless-stopped
+
+volumes:
+  postgres_data:

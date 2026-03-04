@@ -14,6 +14,11 @@ const envSchema = z.object({
   MEDIASOUP_ANNOUNCED_IP: z.ipv4(),
   MEDIASOUP_MIN_PORT: zPort,
   MEDIASOUP_MAX_PORT: zPort,
+  POSTGRES_HOST: z.string(),
+  POSTGRES_PORT: zPort,
+  POSTGRES_USER: z.string(),
+  POSTGRES_PASSWORD: z.string(),
+  POSTGRES_DB: z.string(),
 });
 
 const parsedEnv = envSchema.parse(process.env);

@@ -1,12 +1,10 @@
-import { ArgumentsHost, Catch, ExceptionFilter as NestExceptionFilter, HttpException, HttpStatus, Logger } from '@nestjs/common';
+import { ArgumentsHost, Catch, HttpException, HttpStatus, Logger, ExceptionFilter as NestExceptionFilter } from '@nestjs/common';
 import { Response } from 'express';
 import { z } from 'zod';
 
 const zHttpExceptionResponse = z.union([
-  z
-    .object({ message: z.union([z.array(z.string()).min(1), z.string().transform(msg => [msg])]) })
-    .transform(res => res.message),
-  z.string().transform(msg => [msg]),
+  z.object({ message: z.union([z.array(z.string()).min(1), z.string().transform((msg) => [msg])]) }).transform((res) => res.message),
+  z.string().transform((msg) => [msg]),
 ]);
 
 @Catch()
@@ -22,6 +20,7 @@ export class ExceptionFilter implements NestExceptionFilter {
       const errors = zHttpExceptionResponse.safeParse(error.getResponse()).data ?? [error.message];
 
       response.status(status).send({ errors });
+
       return;
     }
 
