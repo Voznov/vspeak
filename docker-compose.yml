@@ -67,11 +67,11 @@ services:
     environment:
       SERVER_DOMAIN_NAME: ${SERVER_DOMAIN_NAME}
       HTTPS_PORT: ${HTTPS_PORT}
-    command: >
+    command: >-
       sh -c "envsubst '$$SERVER_DOMAIN_NAME $$HTTPS_PORT'
-             < /etc/nginx/nginx.conf.template
-             > /etc/nginx/nginx.conf
-             && exec nginx -g 'daemon off;'"
+      < /etc/nginx/nginx.conf.template
+      > /etc/nginx/nginx.conf
+      && exec nginx -g 'daemon off;'"
     depends_on:
       - server
       - web-client
