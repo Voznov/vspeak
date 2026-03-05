@@ -4,7 +4,7 @@ import { api } from './api';
 import type { ProducerId } from '../../libs/api/entities';
 import ScreenShareIcon from './assets/screen-share.svg?react';
 import ScreenShareOffIcon from './assets/screen-share-off.svg?react';
-import { theme } from './theme';
+import { ControlButton } from './ControlButton';
 
 type ScreenShareButtonProps = {
   sendTransport: Transport | null;
@@ -81,25 +81,12 @@ export function ScreenShareButton({ sendTransport, onLog }: ScreenShareButtonPro
   }, []);
 
   return (
-    <button
+    <ControlButton
+      icon={active ? <ScreenShareIcon width={20} height={20} /> : <ScreenShareOffIcon width={20} height={20} />}
+      variant={active ? 'green' : 'default'}
       onClick={active ? () => void stop() : () => void start()}
       disabled={!sendTransport}
       title={active ? 'Stop screen share' : 'Start screen share'}
-      style={{
-        width: '44px',
-        height: '44px',
-        borderRadius: '50%',
-        border: 'none',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        cursor: !sendTransport ? 'not-allowed' : 'pointer',
-        background: active ? theme.accent.active : theme.button.inactive,
-        color: theme.text.onAccent,
-        flexShrink: 0,
-      }}
-    >
-      {active ? <ScreenShareIcon width={20} height={20} /> : <ScreenShareOffIcon width={20} height={20} />}
-    </button>
+    />
   );
 }

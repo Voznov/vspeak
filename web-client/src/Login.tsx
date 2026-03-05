@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { api, setToken } from './api';
+import { api } from './api';
+import { tokenStorage } from './storage';
 import { theme } from './theme';
 import type { User } from '../../libs/api/entities';
 
@@ -23,7 +24,7 @@ export function Login({ onLogin }: LoginProps) {
       setLoading(true);
       setError(null);
       const { token, user } = await api.login({ nickname: nickname.trim() });
-      setToken(token);
+      tokenStorage.set(token);
       onLogin(user);
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));

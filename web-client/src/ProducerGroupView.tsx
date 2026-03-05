@@ -22,15 +22,16 @@ type Props = {
   device: Device | null;
   isSelf: boolean;
   isDeaf: boolean;
+  speakerDeviceId?: string;
   onLog: (entry: string) => void;
 };
 
 const ANALYSER_FFT_SIZE = 512;
 const ANALYSER_SMOOTHING = 0.3;
-const SPEAKING_THRESHOLD = 8;   // 0–255 average frequency amplitude
-const SPEAKING_HOLD_MS = 200;   // delay before border disappears after silence
+const SPEAKING_THRESHOLD = 8; // 0–255 average frequency amplitude
+const SPEAKING_HOLD_MS = 200; // delay before border disappears after silence
 
-export function ProducerGroupView({ group, recvTransport, device, isSelf, isDeaf, onLog }: Props) {
+export function ProducerGroupView({ group, recvTransport, device, isSelf, isDeaf, speakerDeviceId, onLog }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const audioRef = useRef<HTMLAudioElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -69,7 +70,16 @@ export function ProducerGroupView({ group, recvTransport, device, isSelf, isDeaf
           audioRef.current.srcObject = stream;
           audioRef.current.volume = 1.0;
           audioRef.current.muted = isSelf || isDeaf;
-          try { await audioRef.current.play(); } catch (error) { onLog(`❌ Audio playback error: ${error}`); }
+          if (speakerDeviceId && 'setSinkId' in audioRef.current) {
+            await (audioRef.current as HTMLAudioElement & { setSinkId(id: string): Promise<void> }).setSinkId(
+              speakerDeviceId,
+            );
+          }
+          try {
+            await audioRef.current.play();
+          } catch (error) {
+            onLog(`❌ Audio playback error: ${error}`);
+          }
 
           // Set up volume analyser — works even when the audio element is muted
           if (rafRef.current !== null) cancelAnimationFrame(rafRef.current);
@@ -120,6 +130,13 @@ export function ProducerGroupView({ group, recvTransport, device, isSelf, isDeaf
     }
   }, [isDeaf, isSelf]);
 
+  // Sync speaker device when speakerDeviceId changes after audio is already connected
+  useEffect(() => {
+    if (speakerDeviceId && audioRef.current) {
+      void audioRef.current.setSinkId(speakerDeviceId);
+    }
+  }, [speakerDeviceId]);
+
   // Cleanup audio analyser on unmount
   useEffect(() => {
     return () => {
@@ -143,9 +160,12 @@ export function ProducerGroupView({ group, recvTransport, device, isSelf, isDeaf
     }
   };
 
-  const overlayIcon = group.source === 'display'
-    ? <ScreenShareIcon width={16} height={16} style={{ flexShrink: 0, marginRight: hovered ? '4px' : 0 }} />
-    : (group.audio ? null : <MicOffIcon width={16} height={16} style={{ flexShrink: 0, marginRight: hovered ? '4px' : 0 }} />);
+  const overlayIcon =
+    group.source === 'display' ? (
+      <ScreenShareIcon width={16} height={16} style={{ flexShrink: 0, marginRight: hovered ? '4px' : 0 }} />
+    ) : group.audio ? null : (
+      <MicOffIcon width={16} height={16} style={{ flexShrink: 0, marginRight: hovered ? '4px' : 0 }} />
+    );
 
   return (
     <div
@@ -175,62 +195,62 @@ export function ProducerGroupView({ group, recvTransport, device, isSelf, isDeaf
           userSelect: 'none',
         }}
       >
-      <video
-        ref={videoRef}
-        autoPlay
-        muted
-        playsInline
-        style={{
-          position: 'absolute',
-          inset: 0,
-          width: '100%',
-          height: '100%',
-          objectFit: 'contain',
-          display: hasVideo ? 'block' : 'none',
-        }}
-      />
-
-      <audio ref={audioRef} autoPlay playsInline style={{ display: 'none' }} />
-
-      {!hasVideo && (
-        <div
+        <video
+          ref={videoRef}
+          autoPlay
+          muted
+          playsInline
           style={{
             position: 'absolute',
             inset: 0,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            color: theme.text.onAccent,
-            fontSize: '18px',
-            fontWeight: 600,
+            width: '100%',
+            height: '100%',
+            objectFit: 'contain',
+            display: hasVideo ? 'block' : 'none',
           }}
-        >
-          {group.nickname}
-        </div>
-      )}
+        />
 
-      {(overlayIcon !== null || hovered) && (
-        <div
-          style={{
-            position: 'absolute',
-            top: '8px',
-            left: '8px',
-            display: 'flex',
-            alignItems: 'center',
-            height: '28px',
-            boxSizing: 'border-box',
-            background: 'rgba(0, 0, 0, 0.55)',
-            color: theme.text.onAccent,
-            fontSize: '16px',
-            padding: '0 12px',
-            borderRadius: '4px',
-            transition: 'opacity 0.2s',
-          }}
-        >
-          {overlayIcon}
-          {hovered && group.nickname}
-        </div>
-      )}
+        <audio ref={audioRef} autoPlay playsInline style={{ display: 'none' }} />
+
+        {!hasVideo && (
+          <div
+            style={{
+              position: 'absolute',
+              inset: 0,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: theme.text.onAccent,
+              fontSize: '18px',
+              fontWeight: 600,
+            }}
+          >
+            {group.nickname}
+          </div>
+        )}
+
+        {(overlayIcon !== null || hovered) && (
+          <div
+            style={{
+              position: 'absolute',
+              top: '8px',
+              left: '8px',
+              display: 'flex',
+              alignItems: 'center',
+              height: '28px',
+              boxSizing: 'border-box',
+              background: 'rgba(0, 0, 0, 0.55)',
+              color: theme.text.onAccent,
+              fontSize: '16px',
+              padding: '0 12px',
+              borderRadius: '4px',
+              transition: 'opacity 0.2s',
+            }}
+          >
+            {overlayIcon}
+            {hovered && group.nickname}
+          </div>
+        )}
       </div>
     </div>
   );

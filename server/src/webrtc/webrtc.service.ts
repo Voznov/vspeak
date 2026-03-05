@@ -76,40 +76,16 @@ export class WebRTCService implements OnModuleInit {
           usedtx: 0,
         },
       },
-      // AV1 — best quality, supported in Chrome 117+, Safari 17+
+      // VP8 — universal, all browsers
       {
         kind: 'video',
-        mimeType: 'video/AV1',
+        mimeType: 'video/VP8',
         clockRate: 90000,
         parameters: {
           'x-google-start-bitrate': 5000,
         },
       },
-      // H264 High 3.1 — iOS hardware encoder/decoder
-      {
-        kind: 'video',
-        mimeType: 'video/H264',
-        clockRate: 90000,
-        parameters: {
-          'packetization-mode': 1,
-          'profile-level-id': '640c1f',
-          'level-asymmetry-allowed': 1,
-          'x-google-start-bitrate': 5000,
-        },
-      },
-      // H264 Main 5.0 — Chrome, Firefox, Android
-      {
-        kind: 'video',
-        mimeType: 'video/H264',
-        clockRate: 90000,
-        parameters: {
-          'packetization-mode': 1,
-          'profile-level-id': '4d0032',
-          'level-asymmetry-allowed': 1,
-          'x-google-start-bitrate': 5000,
-        },
-      },
-      // H264 Constrained Baseline 3.1 — iOS hardware, max compatibility
+      // H264 Constrained Baseline 3.1 — universal, iOS hardware
       {
         kind: 'video',
         mimeType: 'video/H264',
@@ -121,32 +97,13 @@ export class WebRTCService implements OnModuleInit {
           'x-google-start-bitrate': 5000,
         },
       },
-      // VP9 profile 0 — 8-bit, broad compatibility
+      // VP9 profile 0 — Chrome, Firefox, Safari 14+, Android
       {
         kind: 'video',
         mimeType: 'video/VP9',
         clockRate: 90000,
         parameters: {
           'profile-id': 0,
-          'x-google-start-bitrate': 5000,
-        },
-      },
-      // VP9 profile 2 — 10-bit HDR
-      {
-        kind: 'video',
-        mimeType: 'video/VP9',
-        clockRate: 90000,
-        parameters: {
-          'profile-id': 2,
-          'x-google-start-bitrate': 5000,
-        },
-      },
-      // VP8 — universal fallback
-      {
-        kind: 'video',
-        mimeType: 'video/VP8',
-        clockRate: 90000,
-        parameters: {
           'x-google-start-bitrate': 5000,
         },
       },

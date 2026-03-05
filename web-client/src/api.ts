@@ -1,34 +1,7 @@
 import { dash } from 'radash';
+import { tokenStorage } from './storage';
 import { Api } from '../../libs/api';
 import { type RpcOptions } from '../../libs/rpc.interface';
-
-const TOKEN_KEY = 'auth_token';
-const MIC_ENABLED_KEY = 'mic_enabled';
-const DEAF_ENABLED_KEY = 'deaf_enabled';
-
-export const getToken = (): string | null => {
-  return localStorage.getItem(TOKEN_KEY);
-};
-
-export const setToken = (token: string): void => {
-  localStorage.setItem(TOKEN_KEY, token);
-};
-
-export const clearToken = (): void => {
-  localStorage.removeItem(TOKEN_KEY);
-};
-
-export const getMicEnabled = (): boolean => localStorage.getItem(MIC_ENABLED_KEY) === 'true';
-
-export const setMicEnabled = (enabled: boolean): void => {
-  localStorage.setItem(MIC_ENABLED_KEY, enabled ? 'true' : 'false');
-};
-
-export const getDeafEnabled = (): boolean => localStorage.getItem(DEAF_ENABLED_KEY) === 'true';
-
-export const setDeafEnabled = (enabled: boolean): void => {
-  localStorage.setItem(DEAF_ENABLED_KEY, enabled ? 'true' : 'false');
-};
 
 export const api = new Proxy(new Api(), {
   get(_, methodName: string) {
@@ -45,7 +18,7 @@ export const api = new Proxy(new Api(), {
         };
 
         // Add Authorization header if token exists
-        const token = getToken();
+        const token = tokenStorage.get();
         if (token) {
           headers['Authorization'] = `Bearer ${token}`;
         }

@@ -3,7 +3,8 @@ import { io, type Socket } from 'socket.io-client';
 import { ChannelSidebar } from './ChannelSidebar';
 import { ChannelView } from './ChannelView';
 import { Login } from './Login';
-import { api, clearToken, getToken } from './api';
+import { api } from './api';
+import { tokenStorage } from './storage';
 import { theme } from './theme';
 import type { ChannelId, ChannelWithUsers, User, WsEvents } from '../../libs/api/entities';
 
@@ -17,7 +18,7 @@ export function App() {
   // Restore user from token on mount
   useEffect(() => {
     const restoreUser = async () => {
-      const token = getToken();
+      const token = tokenStorage.get();
       if (!token) {
         setLoading(false);
         return;
@@ -28,7 +29,7 @@ export function App() {
         setUser(restoredUser);
       } catch (error) {
         // Token is invalid, clear it
-        clearToken();
+        tokenStorage.remove();
         console.error('Failed to restore user:', error);
       } finally {
         setLoading(false);
@@ -40,7 +41,7 @@ export function App() {
 
   // Setup WebSocket when user is authenticated
   useEffect(() => {
-    const token = getToken();
+    const token = tokenStorage.get();
     if (!user || !token) return;
 
     const socket = io('/', { auth: { token } });

@@ -2,7 +2,8 @@ import { useEffect, useRef, useState } from 'react';
 import { Device } from 'mediasoup-client';
 import type { DtlsParameters, IceCandidate, IceParameters, RtpCapabilities, Transport } from 'mediasoup-client/types';
 import type { Socket } from 'socket.io-client';
-import { api, getDeafEnabled } from './api';
+import { api } from './api';
+import { deafEnabledStorage, speakerDeviceStorage } from './storage';
 import { ControlBar } from './ControlBar';
 import { ProducerGroupView, type ProducerGroup } from './ProducerGroupView';
 import { useToast } from './ToastProvider';
@@ -42,7 +43,8 @@ export function ChannelView({ user, channelId, socket, channelUsers, onLeave }: 
   const [recvTransport, setRecvTransport] = useState<Transport | null>(null);
   const [producerInfos, setProducerInfos] = useState<ProducerInfo[]>([]);
   const [connecting, setConnecting] = useState(true);
-  const [isDeaf, setIsDeaf] = useState(() => getDeafEnabled());
+  const [isDeaf, setIsDeaf] = useState(() => deafEnabledStorage.get());
+  const [speakerDeviceId, setSpeakerDeviceId] = useState<string | undefined>(speakerDeviceStorage.get);
 
   const sendTransportRef = useRef<Transport | null>(null);
   const recvTransportRef = useRef<Transport | null>(null);
@@ -163,7 +165,7 @@ export function ChannelView({ user, channelId, socket, channelUsers, onLeave }: 
       setRecvTransport(newRecvTransport);
 
       // Sync deaf state to server — UserInfo is reset on each join
-      if (getDeafEnabled()) {
+      if (deafEnabledStorage.get()) {
         void api.setDeaf({ isDeaf: true });
       }
     } catch (error) {
@@ -225,6 +227,7 @@ export function ChannelView({ user, channelId, socket, channelUsers, onLeave }: 
                   device={deviceRef.current}
                   isSelf={group.userId === user.id}
                   isDeaf={isDeaf}
+                  speakerDeviceId={speakerDeviceId}
                   onLog={addLog}
                 />
               </div>
@@ -257,6 +260,10 @@ export function ChannelView({ user, channelId, socket, channelUsers, onLeave }: 
         connecting={connecting}
         isDeaf={isDeaf}
         onDeafToggle={setIsDeaf}
+        onSpeakerChange={(deviceId) => {
+          speakerDeviceStorage.set(deviceId);
+          setSpeakerDeviceId(deviceId);
+        }}
         onLog={addLog}
         onLeave={onLeave}
       />

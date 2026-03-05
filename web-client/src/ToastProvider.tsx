@@ -7,7 +7,7 @@ const ToastContext = createContext<(message: string) => void>(() => {});
 
 export const useToast = () => useContext(ToastContext);
 
-const TOAST_DURATION_MS = 2000;
+const TOAST_DURATION_MS = 5000;
 
 function ToastContainer({ toasts }: { toasts: Toast[] }) {
   return (
