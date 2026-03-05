@@ -1,5 +1,5 @@
 import { createContext, useCallback, useContext, useRef, useState } from 'react';
-import { theme } from './theme';
+import { theme } from '../theme';
 
 type Toast = { id: number; message: string };
 

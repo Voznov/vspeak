@@ -1,9 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
 import type { Producer, Transport } from 'mediasoup-client/types';
-import { api } from './api';
-import type { ProducerId } from '../../libs/api/entities';
-import ScreenShareIcon from './assets/screen-share.svg?react';
-import ScreenShareOffIcon from './assets/screen-share-off.svg?react';
+import { api } from '../../api';
+import type { ProducerId } from '../../../../libs/api/entities';
+import ScreenShareIcon from '../../assets/screen-share.svg?react';
+import ScreenShareOffIcon from '../../assets/screen-share-off.svg?react';
 import { ControlButton } from './ControlButton';
 
 type ScreenShareButtonProps = {

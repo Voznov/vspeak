@@ -1,8 +1,8 @@
 import { useState } from 'react';
-import { api } from './api';
-import { tokenStorage } from './storage';
-import { theme } from './theme';
-import type { User } from '../../libs/api/entities';
+import { api } from '../api';
+import { tokenStorage } from '../storage';
+import { theme } from '../theme';
+import type { User } from '../../../libs/api/entities';
 
 type LoginProps = {
   onLogin: (user: User) => void;

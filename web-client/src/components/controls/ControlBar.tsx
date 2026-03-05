@@ -1,12 +1,12 @@
 import type { Transport } from 'mediasoup-client/types';
-import PhoneOffIcon from './assets/phone-off.svg?react';
-import { theme } from './theme';
+import PhoneOffIcon from '../../assets/phone-off.svg?react';
+import { theme } from '../../theme';
 import { CameraButton } from './CameraButton';
 import { ControlButton } from './ControlButton';
 import { MicrophoneButton } from './MicrophoneButton';
 import { ScreenShareButton } from './ScreenShareButton';
 import { SpeakerButton } from './SpeakerButton';
-import type { ChannelId } from '../../libs/api/entities';
+import type { ChannelId } from '../../../../libs/api/entities';
 
 type ControlBarProps = {
   channelId: ChannelId;

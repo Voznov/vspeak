@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { io, type Socket } from 'socket.io-client';
-import { ChannelSidebar } from './ChannelSidebar';
-import { ChannelView } from './ChannelView';
-import { Login } from './Login';
+import { ChannelSidebar } from './components/ChannelSidebar';
+import { ChannelView } from './components/ChannelView';
+import { Login } from './components/Login';
 import { api } from './api';
 import { tokenStorage } from './storage';
 import { theme } from './theme';

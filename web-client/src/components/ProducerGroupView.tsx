@@ -1,12 +1,12 @@
 import { useEffect, useRef, useState } from 'react';
 import type { Device } from 'mediasoup-client';
-import MicOffIcon from './assets/mic-off.svg?react';
-import ScreenShareIcon from './assets/screen-share.svg?react';
-import { theme } from './theme';
+import MicOffIcon from '../assets/mic-off.svg?react';
+import ScreenShareIcon from '../assets/screen-share.svg?react';
+import { theme } from '../theme';
 import type { RtpParameters, Transport } from 'mediasoup-client/types';
-import { api } from './api';
-import type { ProducerInfo, ProducerSource, UserId } from '../../libs/api/entities';
-import { getUserColor } from './utils/userColor';
+import { api } from '../api';
+import type { ProducerInfo, ProducerSource, UserId } from '../../../libs/api/entities';
+import { getUserColor } from '../utils/userColor';
 
 export type ProducerGroup = {
   userId: UserId;

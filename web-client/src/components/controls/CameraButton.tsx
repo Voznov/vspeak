@@ -1,27 +1,27 @@
 import { useEffect, useRef, useState } from 'react';
 import type { Producer, Transport } from 'mediasoup-client/types';
-import { api } from './api';
-import { micDeviceStorage, micEnabledStorage } from './storage';
-import type { ProducerId } from '../../libs/api/entities';
-import MicIcon from './assets/mic.svg?react';
-import MicOffIcon from './assets/mic-off.svg?react';
+import { api } from '../../api';
+import { cameraDeviceStorage } from '../../storage';
+import type { ProducerId } from '../../../../libs/api/entities';
+import VideoIcon from '../../assets/video.svg?react';
+import VideoOffIcon from '../../assets/video-off.svg?react';
 import { ControlButton } from './ControlButton';
 
-type MicrophoneButtonProps = {
+type CameraButtonProps = {
   sendTransport: Transport | null;
   onLog: (entry: string) => void;
 };
 
-export function MicrophoneButton({ sendTransport, onLog }: MicrophoneButtonProps) {
+export function CameraButton({ sendTransport, onLog }: CameraButtonProps) {
   const [active, setActive] = useState(false);
   const [devices, setDevices] = useState<MediaDeviceInfo[]>([]);
-  const [selectedDeviceId, setSelectedDeviceId] = useState<string | undefined>(micDeviceStorage.get);
+  const [selectedDeviceId, setSelectedDeviceId] = useState<string | undefined>(cameraDeviceStorage.get);
   const producerRef = useRef<Producer | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
 
   const loadDevices = async () => {
     const all = await navigator.mediaDevices.enumerateDevices();
-    setDevices(all.filter((d) => d.kind === 'audioinput'));
+    setDevices(all.filter((d) => d.kind === 'videoinput'));
   };
 
   const stop = async () => {
@@ -32,59 +32,53 @@ export function MicrophoneButton({ sendTransport, onLog }: MicrophoneButtonProps
     }
     streamRef.current?.getTracks().forEach((t) => t.stop());
     streamRef.current = null;
-    micEnabledStorage.set(false);
     setActive(false);
   };
 
   const start = async (deviceId?: string) => {
-    if (!sendTransport || sendTransport.closed) return;
+    if (!sendTransport) return;
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
-        audio: {
+        video: {
           deviceId: deviceId ? { exact: deviceId } : undefined,
-          echoCancellation: true,
-          noiseSuppression: true,
-          autoGainControl: true,
-          sampleRate: 48000,
+          width: { ideal: 1920 },
+          height: { ideal: 1080 },
+          frameRate: { ideal: 60 },
         },
       });
       streamRef.current = stream;
-      const audioTrack = stream.getAudioTracks()[0];
+      const videoTrack = stream.getVideoTracks()[0];
 
       // Detect which device was actually used and refresh labels
-      const actualDeviceId = audioTrack.getSettings().deviceId;
+      const actualDeviceId = videoTrack.getSettings().deviceId;
       if (actualDeviceId) {
         setSelectedDeviceId(actualDeviceId);
-        micDeviceStorage.set(actualDeviceId);
+        cameraDeviceStorage.set(actualDeviceId);
       }
       void loadDevices();
 
-      const producer = await sendTransport.produce({ track: audioTrack, appData: { source: 'user' } });
+      const producer = await sendTransport.produce({
+        track: videoTrack,
+        appData: { source: 'user' },
+        encodings: [{ maxBitrate: 10_000_000 }],
+      });
       producerRef.current = producer;
-      micEnabledStorage.set(true);
       setActive(true);
     } catch (error) {
-      streamRef.current?.getTracks().forEach((t) => t.stop());
-      streamRef.current = null;
       onLog(`❌ Error: ${error}`);
     }
   };
 
   const selectDevice = async (deviceId: string) => {
     setSelectedDeviceId(deviceId);
-    micDeviceStorage.set(deviceId);
+    cameraDeviceStorage.set(deviceId);
     if (active) {
       await stop();
       await start(deviceId);
     }
   };
 
-  // Auto-start mic when transport is ready if it was enabled in the previous session
-  useEffect(() => {
-    if (sendTransport && micEnabledStorage.get()) void start(selectedDeviceId);
-  }, [sendTransport]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  // Release mic track on unmount (channel switch or leave)
+  // Release camera track on unmount (channel switch or leave)
   useEffect(() => {
     return () => {
       streamRef.current?.getTracks().forEach((t) => t.stop());
@@ -96,17 +90,17 @@ export function MicrophoneButton({ sendTransport, onLog }: MicrophoneButtonProps
 
   return (
     <ControlButton
-      icon={active ? <MicIcon width={20} height={20} /> : <MicOffIcon width={20} height={20} />}
+      icon={active ? <VideoIcon width={20} height={20} /> : <VideoOffIcon width={20} height={20} />}
       variant={active ? 'green' : 'default'}
       onClick={active ? () => void stop() : () => void start(selectedDeviceId)}
       disabled={!sendTransport}
-      title={active ? 'Mute microphone' : 'Unmute microphone'}
+      title={active ? 'Stop camera' : 'Start camera'}
       picker={{
-        items: devices.map((d) => ({ key: d.deviceId, label: d.label || `Microphone ${d.deviceId.slice(0, 8)}` })),
+        items: devices.map((d) => ({ key: d.deviceId, label: d.label || `Camera ${d.deviceId.slice(0, 8)}` })),
         selected: selectedDeviceId,
         onSelect: (key) => void selectDevice(key),
         onOpen: () => void loadDevices(),
-        emptyListTitle: 'No microphones found',
+        emptyListTitle: 'No cameras found',
       }}
     />
   );

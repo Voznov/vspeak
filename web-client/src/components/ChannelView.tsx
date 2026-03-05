@@ -2,14 +2,14 @@ import { useEffect, useRef, useState } from 'react';
 import { Device } from 'mediasoup-client';
 import type { DtlsParameters, IceCandidate, IceParameters, RtpCapabilities, Transport } from 'mediasoup-client/types';
 import type { Socket } from 'socket.io-client';
-import { api } from './api';
-import { deafEnabledStorage, speakerDeviceStorage } from './storage';
-import { ControlBar } from './ControlBar';
+import { api } from '../api';
+import { deafEnabledStorage, speakerDeviceStorage } from '../storage';
+import { ControlBar } from './controls/ControlBar';
 import { ProducerGroupView, type ProducerGroup } from './ProducerGroupView';
 import { useToast } from './ToastProvider';
-import { theme } from './theme';
-import { calculateGrid } from './utils/calculateGrid';
-import type { ChannelId, ProducerInfo, ProducerSource, User, WsEvents } from '../../libs/api/entities';
+import { theme } from '../theme';
+import { calculateGrid } from '../utils/calculateGrid';
+import type { ChannelId, ProducerInfo, ProducerSource, User, WsEvents } from '../../../libs/api/entities';
 
 type ChannelViewProps = {
   user: User;

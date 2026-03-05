@@ -34,7 +34,7 @@ docker compose -f local/docker-compose.yml up -d
 ### Prerequisites
 
 - Docker & Docker Compose
-- SSL certificates for your domain (required for WebRTC)
+- SSL certificates for your domain (required for HTTPS, which browsers enforce for microphone/camera access)
 
 ### Setup
 

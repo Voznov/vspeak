@@ -1,10 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
-import type { ChannelId, ChannelWithUsers } from '../../libs/api/entities';
-import HeadphonesOffIcon from './assets/headphones-off.svg?react';
-import MicOffIcon from './assets/mic-off.svg?react';
-import ScreenShareIcon from './assets/screen-share.svg?react';
-import VideoIcon from './assets/video.svg?react';
-import { theme } from './theme';
+import type { ChannelId, ChannelWithUsers } from '../../../libs/api/entities';
+import HeadphonesOffIcon from '../assets/headphones-off.svg?react';
+import MicOffIcon from '../assets/mic-off.svg?react';
+import ScreenShareIcon from '../assets/screen-share.svg?react';
+import VideoIcon from '../assets/video.svg?react';
+import { theme } from '../theme';
 
 type ChannelSidebarProps = {
   channels: ChannelWithUsers[];

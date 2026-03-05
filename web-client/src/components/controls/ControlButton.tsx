@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
-import ChevronDownIcon from './assets/chevron-down.svg?react';
-import ChevronUpIcon from './assets/chevron-up.svg?react';
-import { theme } from './theme';
+import ChevronDownIcon from '../../assets/chevron-down.svg?react';
+import ChevronUpIcon from '../../assets/chevron-up.svg?react';
+import { theme } from '../../theme';
 
 type PickerConfig = {
   items: { key: string; label: string }[];

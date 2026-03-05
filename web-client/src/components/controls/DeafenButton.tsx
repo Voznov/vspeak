@@ -1,7 +1,7 @@
-import { api } from './api';
-import { deafEnabledStorage } from './storage';
-import HeadphonesIcon from './assets/headphones.svg?react';
-import HeadphonesOffIcon from './assets/headphones-off.svg?react';
+import { api } from '../../api';
+import { deafEnabledStorage } from '../../storage';
+import HeadphonesIcon from '../../assets/headphones.svg?react';
+import HeadphonesOffIcon from '../../assets/headphones-off.svg?react';
 import { ControlButton } from './ControlButton';
 
 type DeafenButtonProps = {
