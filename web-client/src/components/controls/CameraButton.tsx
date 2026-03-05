@@ -6,6 +6,7 @@ import type { ProducerId } from '../../../../libs/api/entities';
 import VideoIcon from '../../assets/video.svg?react';
 import VideoOffIcon from '../../assets/video-off.svg?react';
 import { ControlButton } from './ControlButton';
+import { sounds } from '../../sounds';
 
 type CameraButtonProps = {
   sendTransport: Transport | null;
@@ -24,7 +25,7 @@ export function CameraButton({ sendTransport, onLog }: CameraButtonProps) {
     setDevices(all.filter((d) => d.kind === 'videoinput'));
   };
 
-  const stop = async () => {
+  const stop = async (silent = false) => {
     if (producerRef.current) {
       await api.closeProducer({ producerId: producerRef.current.id as ProducerId });
       producerRef.current.close();
@@ -33,9 +34,10 @@ export function CameraButton({ sendTransport, onLog }: CameraButtonProps) {
     streamRef.current?.getTracks().forEach((t) => t.stop());
     streamRef.current = null;
     setActive(false);
+    if (!silent) sounds.cameraOff();
   };
 
-  const start = async (deviceId?: string) => {
+  const start = async (deviceId?: string, silent = false) => {
     if (!sendTransport) return;
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
@@ -64,6 +66,7 @@ export function CameraButton({ sendTransport, onLog }: CameraButtonProps) {
       });
       producerRef.current = producer;
       setActive(true);
+      if (!silent) sounds.cameraOn();
     } catch (error) {
       onLog(`❌ Error: ${error}`);
     }
@@ -73,8 +76,8 @@ export function CameraButton({ sendTransport, onLog }: CameraButtonProps) {
     setSelectedDeviceId(deviceId);
     cameraDeviceStorage.set(deviceId);
     if (active) {
-      await stop();
-      await start(deviceId);
+      await stop(true);
+      await start(deviceId, true);
     }
   };
 

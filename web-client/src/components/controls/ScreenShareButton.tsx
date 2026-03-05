@@ -5,6 +5,7 @@ import type { ProducerId } from '../../../../libs/api/entities';
 import ScreenShareIcon from '../../assets/screen-share.svg?react';
 import ScreenShareOffIcon from '../../assets/screen-share-off.svg?react';
 import { ControlButton } from './ControlButton';
+import { sounds } from '../../sounds';
 
 type ScreenShareButtonProps = {
   sendTransport: Transport | null;
@@ -31,6 +32,7 @@ export function ScreenShareButton({ sendTransport, onLog }: ScreenShareButtonPro
     streamRef.current?.getTracks().forEach((t) => t.stop());
     streamRef.current = null;
     setActive(false);
+    sounds.screenShareOff();
   };
 
   const start = async () => {
@@ -63,6 +65,7 @@ export function ScreenShareButton({ sendTransport, onLog }: ScreenShareButtonPro
       }
 
       setActive(true);
+      sounds.screenShareOn();
     } catch (error) {
       onLog(`❌ Error: ${error}`);
     }

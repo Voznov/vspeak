@@ -4,6 +4,7 @@ import { deafEnabledStorage, speakerDeviceStorage } from '../../storage';
 import HeadphonesIcon from '../../assets/headphones.svg?react';
 import HeadphonesOffIcon from '../../assets/headphones-off.svg?react';
 import { ControlButton } from './ControlButton';
+import { sounds } from '../../sounds';
 
 type SpeakerButtonProps = {
   isDeaf: boolean;
@@ -19,6 +20,7 @@ export function SpeakerButton({ isDeaf, onToggle, onSpeakerChange }: SpeakerButt
     const next = !isDeaf;
     deafEnabledStorage.set(next);
     onToggle(next);
+    if (next) sounds.deafen(); else sounds.undeafen();
     await api.setDeaf({ isDeaf: next });
   };
 

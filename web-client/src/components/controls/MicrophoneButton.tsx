@@ -6,6 +6,7 @@ import type { ProducerId } from '../../../../libs/api/entities';
 import MicIcon from '../../assets/mic.svg?react';
 import MicOffIcon from '../../assets/mic-off.svg?react';
 import { ControlButton } from './ControlButton';
+import { sounds } from '../../sounds';
 
 type MicrophoneButtonProps = {
   sendTransport: Transport | null;
@@ -24,7 +25,7 @@ export function MicrophoneButton({ sendTransport, onLog }: MicrophoneButtonProps
     setDevices(all.filter((d) => d.kind === 'audioinput'));
   };
 
-  const stop = async () => {
+  const stop = async (silent = false) => {
     if (producerRef.current) {
       await api.closeProducer({ producerId: producerRef.current.id as ProducerId });
       producerRef.current.close();
@@ -34,9 +35,10 @@ export function MicrophoneButton({ sendTransport, onLog }: MicrophoneButtonProps
     streamRef.current = null;
     micEnabledStorage.set(false);
     setActive(false);
+    if (!silent) sounds.mute();
   };
 
-  const start = async (deviceId?: string) => {
+  const start = async (deviceId?: string, silent = false) => {
     if (!sendTransport || sendTransport.closed) return;
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
@@ -63,6 +65,7 @@ export function MicrophoneButton({ sendTransport, onLog }: MicrophoneButtonProps
       producerRef.current = producer;
       micEnabledStorage.set(true);
       setActive(true);
+      if (!silent) sounds.unmute();
     } catch (error) {
       streamRef.current?.getTracks().forEach((t) => t.stop());
       streamRef.current = null;
@@ -74,14 +77,14 @@ export function MicrophoneButton({ sendTransport, onLog }: MicrophoneButtonProps
     setSelectedDeviceId(deviceId);
     micDeviceStorage.set(deviceId);
     if (active) {
-      await stop();
-      await start(deviceId);
+      await stop(true);
+      await start(deviceId, true);
     }
   };
 
   // Auto-start mic when transport is ready if it was enabled in the previous session
   useEffect(() => {
-    if (sendTransport && micEnabledStorage.get()) void start(selectedDeviceId);
+    if (sendTransport && micEnabledStorage.get()) void start(selectedDeviceId, true);
   }, [sendTransport]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Release mic track on unmount (channel switch or leave)

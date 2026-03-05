@@ -10,6 +10,7 @@ import { useToast } from './ToastProvider';
 import { theme } from '../theme';
 import { calculateGrid } from '../utils/calculateGrid';
 import type { ChannelId, ProducerInfo, ProducerSource, User, WsEvents } from '../../../libs/api/entities';
+import { sounds } from '../sounds';
 
 type ChannelViewProps = {
   user: User;
@@ -61,18 +62,31 @@ export function ChannelView({ user, channelId, socket, channelUsers, onLeave }: 
   // Subscribe to channel-scoped WebSocket events
   useEffect(() => {
     const onProducerCreated = (data: WsEvents['producerCreated']) => {
+      if (data.info.userId !== user.id && data.info.kind === 'video') {
+        if (data.info.source === 'display') sounds.screenShareOn();
+        else sounds.cameraOn();
+      }
       setProducerInfos((prev) => [...prev, data.info]);
     };
     const onProducerClosed = (data: WsEvents['producerClosed']) => {
-      setProducerInfos((prev) => prev.filter((p) => p.producerId !== data.producerId));
+      setProducerInfos((prev) => {
+        const closing = prev.find((p) => p.producerId === data.producerId);
+        if (closing && closing.userId !== user.id && closing.kind === 'video') {
+          if (closing.source === 'display') sounds.screenShareOff();
+          else sounds.cameraOff();
+        }
+        return prev.filter((p) => p.producerId !== data.producerId);
+      });
     };
     const onChannelUserJoined = (data: WsEvents['channelUserJoined']) => {
       if (data.channelId !== channelIdRef.current || data.user.id === user.id) return;
+      sounds.joinChannel();
       addLog(`👤 ${data.user.nickname} joined`);
     };
     const onChannelUserLeft = (data: WsEvents['channelUserLeft']) => {
       if (data.channelId !== channelIdRef.current || data.userId === user.id) return;
       const nickname = channelUsersRef.current.find((u) => u.id === data.userId)?.nickname ?? String(data.userId);
+      sounds.leaveChannel();
       addLog(`👤 ${nickname} left`);
     };
 
@@ -168,6 +182,7 @@ export function ChannelView({ user, channelId, socket, channelUsers, onLeave }: 
       if (deafEnabledStorage.get()) {
         void api.setDeaf({ isDeaf: true });
       }
+      sounds.joinChannel();
     } catch (error) {
       addLog(`❌ Error: ${error}`);
     } finally {
@@ -265,7 +280,7 @@ export function ChannelView({ user, channelId, socket, channelUsers, onLeave }: 
           setSpeakerDeviceId(deviceId);
         }}
         onLog={addLog}
-        onLeave={onLeave}
+        onLeave={() => { sounds.leaveChannel(); onLeave(); }}
       />
     </div>
   );
