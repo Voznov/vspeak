@@ -17,12 +17,12 @@ export class AuthController extends Api.Auth {
   async login(@Body() request: LoginRequestDto): Promise<LoginResponseDto> {
     const { nickname } = request;
 
-    const existingUser = this.authService.getUserByNickname(nickname);
+    const existingUser = await this.authService.getUserByNickname(nickname);
     if (existingUser) {
       throw new HttpException('Nickname already taken', HttpStatus.CONFLICT);
     }
 
-    const user = this.authService.createUser(nickname, 'user');
+    const user = await this.authService.createUser(nickname, 'user');
     const token = this.authService.generateToken(user.id);
 
     return { token, user };
@@ -36,12 +36,12 @@ export class AuthController extends Api.Auth {
       throw new HttpException('Invalid admin key', HttpStatus.FORBIDDEN);
     }
 
-    const existingUser = this.authService.getUserByNickname(nickname);
+    const existingUser = await this.authService.getUserByNickname(nickname);
     if (existingUser) {
       throw new HttpException('Nickname already taken', HttpStatus.CONFLICT);
     }
 
-    const user = this.authService.createUser(nickname, 'admin');
+    const user = await this.authService.createUser(nickname, 'admin');
     const token = this.authService.generateToken(user.id);
 
     return { token, user };
@@ -51,7 +51,7 @@ export class AuthController extends Api.Auth {
   @UseGuards(JwtAuthGuard)
   async getMe(): Promise<GetMeResponseDto> {
     const userId = getUserId();
-    const user = this.authService.getUser(userId);
+    const user = await this.authService.getUser(userId);
 
     if (!user) {
       throw new HttpException('User not found', HttpStatus.NOT_FOUND);

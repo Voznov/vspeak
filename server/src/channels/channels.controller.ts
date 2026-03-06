@@ -27,7 +27,7 @@ export class ChannelsController extends Api.Channels {
 
   @Rest({ response: ListChannelsResponseDto })
   async listChannels(): Promise<ListChannelsResponseDto> {
-    const channels = this.channelsService.listChannels();
+    const channels = await this.channelsService.listChannels();
 
     return { channels };
   }
@@ -64,7 +64,7 @@ export class ChannelsController extends Api.Channels {
 
   @Rest({ response: GetChannelUsersResponseDto })
   async getChannelUsers(@Body() request: GetChannelUsersRequestDto): Promise<GetChannelUsersResponseDto> {
-    const users = this.channelsService.getChannelUsers(request.channelId);
+    const users = await this.channelsService.getChannelUsers(request.channelId);
 
     return { users };
   }

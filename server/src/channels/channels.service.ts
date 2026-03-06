@@ -1,86 +1,92 @@
-import { randomUUID } from 'crypto';
 import { HttpException, HttpStatus, Injectable, type OnModuleInit } from '@nestjs/common';
 import type { ChannelId, ChannelWithUsers, UserId, UserWithStatus } from '../../../libs/api/entities';
 import { AuthService } from '../auth/auth.service';
 import { WebRTCService } from '../webrtc/webrtc.service';
 import { WsGateway } from '../ws/ws.gateway';
+import { ChannelsRepo } from './channels.repo';
 
-type ChannelData = {
-  id: ChannelId;
-  name: string;
+type ChannelRuntime = {
   userIds: Set<UserId>;
 };
 
 @Injectable()
 export class ChannelsService implements OnModuleInit {
-  private readonly channels = new Map<ChannelId, ChannelData>();
+  private readonly runtime = new Map<ChannelId, ChannelRuntime>();
 
   constructor(
+    private readonly repo: ChannelsRepo,
     private readonly webrtcService: WebRTCService,
     private readonly authService: AuthService,
     private readonly wsGateway: WsGateway,
   ) {}
 
   async onModuleInit() {
+    // Restore runtime state for channels already in DB
+    const channels = await this.repo.listChannels();
+    for (const ch of channels) {
+      await this.webrtcService.createChannelRouter(ch.id);
+      this.runtime.set(ch.id, { userIds: new Set() });
+    }
+
     this.wsGateway.onUserDisconnect((userId) => {
-      const channel = this.findUserChannel(userId);
-      if (channel) {
-        void this.leaveChannel(userId, channel.id);
+      const channelId = this.findUserChannelId(userId);
+      if (channelId) {
+        void this.leaveChannel(userId, channelId);
       }
     });
   }
 
   async createChannel(name: string): Promise<ChannelWithUsers> {
-    const channelId = randomUUID() as ChannelId;
-    const channelData: ChannelData = { id: channelId, name, userIds: new Set() };
+    const entity = await this.repo.createChannel(name);
 
-    // Create a WebRTC router for the channel (with default codecs)
-    await this.webrtcService.createChannelRouter(channelId);
-    this.channels.set(channelId, channelData);
+    await this.webrtcService.createChannelRouter(entity.id);
+    this.runtime.set(entity.id, { userIds: new Set() });
 
-    const channel: ChannelWithUsers = { id: channelId, name, users: [] };
+    const channel: ChannelWithUsers = { id: entity.id, name: entity.name, users: [] };
     this.wsGateway.emitToAll('channelCreated', { channel });
 
     return channel;
   }
 
   async deleteChannel(channelId: ChannelId): Promise<void> {
-    const channel = this.channels.get(channelId);
-    if (!channel) {
+    const rt = this.runtime.get(channelId);
+    if (!rt) {
       throw new HttpException('Channel not found', HttpStatus.NOT_FOUND);
     }
 
     // Disconnect all users before deleting the channel
-    const userIds = Array.from(channel.userIds);
-    for (const userId of userIds) {
+    for (const userId of rt.userIds) {
       this.webrtcService.closeTransports(userId);
-      // closeTransports will trigger the onUserDisconnected callback
     }
 
-    // Delete the WebRTC router
     await this.webrtcService.deleteChannelRouter(channelId);
-    this.channels.delete(channelId);
+    this.runtime.delete(channelId);
+    await this.repo.deleteChannel(channelId);
     this.wsGateway.emitToAll('channelDeleted', { channelId });
   }
 
-  listChannels(): ChannelWithUsers[] {
-    return Array.from(this.channels.values()).map((ch) => ({
-      id: ch.id,
-      name: ch.name,
-      users: this.getChannelUsers(ch.id),
-    }));
+  async listChannels(): Promise<ChannelWithUsers[]> {
+    const channels = await this.repo.listChannels();
+
+    return Promise.all(
+      channels.map(async (ch) => ({
+        id: ch.id,
+        name: ch.name,
+        users: await this.getChannelUsers(ch.id),
+      })),
+    );
   }
 
   async joinChannel(userId: UserId, channelId: ChannelId) {
-    const channel = this.channels.get(channelId);
-    if (!channel) {
+    const rt = this.runtime.get(channelId);
+    if (!rt) {
       throw new HttpException('Channel not found', HttpStatus.NOT_FOUND);
     }
 
     // If the user is already connected somewhere, disconnect them first
-    const currentChannel = this.findUserChannel(userId);
-    if (currentChannel) {
-      await this.leaveChannel(userId, currentChannel.id);
+    const currentChannelId = this.findUserChannelId(userId);
+    if (currentChannelId) {
+      await this.leaveChannel(userId, currentChannelId);
     }
 
     // Create WebRTC transports with a disconnect callback
@@ -89,9 +95,9 @@ export class ChannelsService implements OnModuleInit {
     });
 
     // Add the user to the channel
-    channel.userIds.add(userId);
+    rt.userIds.add(userId);
 
-    const user = this.authService.getUser(userId);
+    const user = await this.authService.getUser(userId);
     if (user) {
       this.wsGateway.emitToAll('channelUserJoined', {
         channelId,
@@ -99,15 +105,21 @@ export class ChannelsService implements OnModuleInit {
       });
     }
 
+    const channel = await this.repo.getChannelById(channelId);
+
     return {
-      channel: this.getChannelWithUsers(channelId),
+      channel: {
+        id: channelId,
+        name: channel!.name,
+        users: await this.getChannelUsers(channelId),
+      },
       ...transports,
     };
   }
 
   async leaveChannel(userId: UserId, channelId: ChannelId): Promise<void> {
-    const channel = this.channels.get(channelId);
-    if (!channel) {
+    const rt = this.runtime.get(channelId);
+    if (!rt) {
       return;
     }
 
@@ -117,49 +129,38 @@ export class ChannelsService implements OnModuleInit {
 
   // Called when a transport closes (for any reason); idempotent — safe to call multiple times
   private onUserDisconnected(userId: UserId, channelId: ChannelId): void {
-    const channel = this.channels.get(channelId);
-    if (channel && channel.userIds.has(userId)) {
-      channel.userIds.delete(userId);
+    const rt = this.runtime.get(channelId);
+    if (rt && rt.userIds.has(userId)) {
+      rt.userIds.delete(userId);
       this.wsGateway.emitToAll('channelUserLeft', { channelId, userId });
     }
   }
 
-  private findUserChannel(userId: UserId): ChannelData | undefined {
-    for (const channel of this.channels.values()) {
-      if (channel.userIds.has(userId)) {
-        return channel;
+  private findUserChannelId(userId: UserId): ChannelId | undefined {
+    for (const [channelId, rt] of this.runtime) {
+      if (rt.userIds.has(userId)) {
+        return channelId;
       }
     }
 
     return undefined;
   }
 
-  getChannelUsers(channelId: ChannelId): UserWithStatus[] {
-    const channel = this.channels.get(channelId);
-    if (!channel) {
+  async getChannelUsers(channelId: ChannelId): Promise<UserWithStatus[]> {
+    const rt = this.runtime.get(channelId);
+    if (!rt) {
       return [];
     }
 
-    return [...channel.userIds].map((userId) => {
-      const user = this.authService.getUser(userId);
-      if (!user) {
-        throw new Error(`User ${userId} not found`);
-      }
+    return Promise.all(
+      [...rt.userIds].map(async (userId) => {
+        const user = await this.authService.getUser(userId);
+        if (!user) {
+          throw new Error(`User ${userId} not found`);
+        }
 
-      return { ...user, ...this.webrtcService.getUserMediaStatus(userId) };
-    });
-  }
-
-  private getChannelWithUsers(channelId: ChannelId): ChannelWithUsers {
-    const channel = this.channels.get(channelId);
-    if (!channel) {
-      throw new HttpException('Channel not found', HttpStatus.NOT_FOUND);
-    }
-
-    return {
-      id: channel.id,
-      name: channel.name,
-      users: this.getChannelUsers(channelId),
-    };
+        return { ...user, ...this.webrtcService.getUserMediaStatus(userId) };
+      }),
+    );
   }
 }

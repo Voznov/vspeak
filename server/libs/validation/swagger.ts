@@ -14,9 +14,17 @@ const schemaObjectToApiPropertyOptions = (so: SchemaObject, selfRequired: boolea
   return { ...so, required: selfRequired } as ApiPropertyOptions;
 };
 
+const leaf = (so: SchemaObject): { so: SchemaObject; selfRequired: boolean; innerSchemas: Set<ZodDtoClass> } => ({
+  so,
+  selfRequired: true,
+  innerSchemas: new Set(),
+});
+
 const decoratedDtoClasses = new Set<ZodDtoClass>();
 
 export const applySwaggerDecorators = (schema: z.core.$ZodType): { so: SchemaObject; selfRequired: boolean; innerSchemas: Set<ZodDtoClass> } => {
+  // --- Objects ---
+
   if (schema instanceof z.ZodObject) {
     if (isZodDtoClass(schema) && decoratedDtoClasses.has(schema)) {
       return { so: { oneOf: refs(schema) }, selfRequired: true, innerSchemas: new Set([schema]) };
@@ -47,9 +55,49 @@ export const applySwaggerDecorators = (schema: z.core.$ZodType): { so: SchemaObj
     return { so: { type: 'object', properties: mapValues(properties, (so) => (so.oneOf?.length === 1 ? so.oneOf[0] : so)), required }, selfRequired: true, innerSchemas };
   }
 
-  if (schema instanceof z.ZodOptional) {
+  if (schema instanceof z.ZodRecord) {
+    const { so } = applySwaggerDecorators(schema._zod.def.valueType as z.ZodType);
+
+    return leaf({ type: 'object', additionalProperties: so.oneOf?.length === 1 ? so.oneOf[0] : so });
+  }
+
+  // --- Wrappers (unwrap to inner type) ---
+
+  if (schema instanceof z.ZodOptional || schema instanceof z.ZodExactOptional) {
     return { ...applySwaggerDecorators(schema.unwrap()), selfRequired: false };
   }
+
+  if (schema instanceof z.ZodDefault) {
+    return { ...applySwaggerDecorators(schema.unwrap()), selfRequired: false };
+  }
+
+  if (schema instanceof z.ZodReadonly || schema instanceof z.ZodLazy || schema instanceof z.ZodCatch) {
+    return applySwaggerDecorators(schema.unwrap());
+  }
+
+  if (schema instanceof z.ZodNonOptional) {
+    return { ...applySwaggerDecorators(schema.unwrap()), selfRequired: true };
+  }
+
+  if (schema instanceof z.ZodNullable) {
+    const result = applySwaggerDecorators(schema.unwrap());
+
+    return { ...result, so: { ...result.so, nullable: true } };
+  }
+
+  if (schema instanceof z.ZodPipe) {
+    // z.preprocess() creates a Pipe(in: ZodTransform, out: schema).
+    // For swagger, skip the transform and process the output schema directly.
+    const inner = schema.in instanceof z.ZodTransform ? schema.out : schema.in;
+
+    return applySwaggerDecorators(inner);
+  }
+
+  if (schema instanceof z.ZodTransform) {
+    return leaf({});
+  }
+
+  // --- Arrays & tuples ---
 
   if (schema instanceof z.ZodArray) {
     const element = schema.unwrap();
@@ -61,15 +109,21 @@ export const applySwaggerDecorators = (schema: z.core.$ZodType): { so: SchemaObj
     return { so: { type: 'array', items: so.oneOf?.length === 1 ? so.oneOf[0] : so }, selfRequired: true, innerSchemas };
   }
 
-  if (schema instanceof z.ZodNullable) {
-    const result = applySwaggerDecorators(schema.unwrap());
+  if (schema instanceof z.ZodTuple) {
+    const itemSchemas = schema._zod.def.items.map((item) => {
+      const { so } = applySwaggerDecorators(item);
 
-    return { ...result, so: { ...result.so, nullable: true } };
+      return so.oneOf?.length === 1 ? so.oneOf[0] : so;
+    });
+
+    // Deduplicate by JSON representation to collapse identical types
+    const unique = [...new Map(itemSchemas.map((s) => [JSON.stringify(s), s])).values()];
+    const items = unique.length === 1 ? unique[0] : { oneOf: unique };
+
+    return leaf({ type: 'array', items, minItems: itemSchemas.length, maxItems: itemSchemas.length });
   }
 
-  if (schema instanceof z.ZodPipe) {
-    return applySwaggerDecorators(schema.in);
-  }
+  // --- Scalars ---
 
   // ZodString: plain z.string(). ZodStringFormat: z.email(), z.uuid(), z.url(), z.ipv4(), etc.
   // Both share the same properties (minLength, maxLength, format).
@@ -103,21 +157,37 @@ export const applySwaggerDecorators = (schema: z.core.$ZodType): { so: SchemaObj
     return { so, selfRequired: true, innerSchemas: new Set() };
   }
 
-  if (schema instanceof z.ZodBoolean) {
-    return { so: { type: 'boolean' }, selfRequired: true, innerSchemas: new Set() };
+  if (schema instanceof z.ZodBigInt) {
+    return leaf({ type: 'integer', format: 'int64' });
   }
 
+  if (schema instanceof z.ZodBoolean) {
+    return leaf({ type: 'boolean' });
+  }
+
+  if (schema instanceof z.ZodDate) {
+    return leaf({ type: 'string', format: 'date-time' });
+  }
+
+  if (schema instanceof z.ZodNull) {
+    return { so: { nullable: true }, selfRequired: true, innerSchemas: new Set() };
+  }
+
+  // --- Enums & literals ---
+
   if (schema instanceof z.ZodEnum) {
-    return { so: { enum: schema.options }, selfRequired: true, innerSchemas: new Set() };
+    return leaf({ enum: schema.options });
   }
 
   if (schema instanceof z.ZodLiteral) {
-    return { so: { enum: [...schema.values] }, selfRequired: true, innerSchemas: new Set() };
+    return leaf({ enum: [...schema.values] });
   }
 
-  if (schema instanceof z.ZodUnion) {
+  // --- Unions & intersections ---
+
+  if (schema instanceof z.ZodUnion || schema instanceof z.ZodDiscriminatedUnion) {
     const innerSchemas = new Set<ZodDtoClass>();
-    const oneOf = schema.options.map((option) => {
+    const oneOf = schema.options.map((option: z.ZodType) => {
       const { so, selfRequired, innerSchemas: innerSchemas_ } = applySwaggerDecorators(option);
 
       if (!selfRequired) {
@@ -131,6 +201,26 @@ export const applySwaggerDecorators = (schema: z.core.$ZodType): { so: SchemaObj
     });
 
     return { so: { oneOf }, selfRequired: true, innerSchemas };
+  }
+
+  if (schema instanceof z.ZodIntersection) {
+    const left = applySwaggerDecorators(schema._zod.def.left as z.ZodType);
+    const right = applySwaggerDecorators(schema._zod.def.right as z.ZodType);
+    const innerSchemas = new Set([...left.innerSchemas, ...right.innerSchemas]);
+    const leftSo = left.so.oneOf?.length === 1 ? left.so.oneOf[0] : left.so;
+    const rightSo = right.so.oneOf?.length === 1 ? right.so.oneOf[0] : right.so;
+
+    return { so: { allOf: [leftSo, rightSo] }, selfRequired: true, innerSchemas };
+  }
+
+  // --- Catch-all ---
+
+  if (schema instanceof z.ZodAny || schema instanceof z.ZodUnknown) {
+    return leaf({});
+  }
+
+  if (schema instanceof z.ZodUndefined || schema instanceof z.ZodVoid || schema instanceof z.ZodNever) {
+    throw new Error(`applySwaggerDecorators: ${(schema as z.ZodType).def.type} cannot be represented in JSON`);
   }
 
   throw new Error(`applySwaggerDecorators: unsupported Zod type "${(schema as z.ZodType).def.type}"`);
