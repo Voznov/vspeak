@@ -1,8 +1,8 @@
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import jwt from 'jsonwebtoken';
+import { AuthRepo } from './auth.repo';
 import type { User, UserId, UserRole } from '../../../libs/api/entities';
 import { ENV } from '../env';
-import { AuthRepo } from './auth.repo';
 
 type JWTPayload = {
   userId: UserId;

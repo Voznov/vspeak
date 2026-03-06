@@ -1,18 +1,15 @@
 import { Injectable } from '@nestjs/common';
+import { ChannelEntity } from './channels.entity';
 import type { ChannelId } from '../../../libs/api/entities';
 import { toDto } from '../../libs/validation';
 import { PostgresService } from '../postgres/postgres.service';
-import { ChannelEntity } from './channels.entity';
 
 @Injectable()
 export class ChannelsRepo {
   constructor(private readonly pg: PostgresService) {}
 
   async createChannel(name: string): Promise<ChannelEntity> {
-    const { rows } = await this.pg.query(
-      'INSERT INTO channels (name) VALUES ($1) RETURNING *',
-      [name],
-    );
+    const { rows } = await this.pg.query('INSERT INTO channels (name) VALUES ($1) RETURNING *', [name]);
 
     return toDto(ChannelEntity, rows[0]);
   }

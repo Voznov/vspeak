@@ -1,6 +1,6 @@
 import dotenv from 'dotenv';
 import { z } from 'zod';
-import { zPort } from './utils/zod';
+import { zBooleanFromString, zPort } from './utils/zod';
 
 const envFiles = ['.env.local', '.env'];
 envFiles.forEach((envFile) => dotenv.config({ path: envFile, override: false }));
@@ -19,6 +19,11 @@ const envSchema = z.object({
   POSTGRES_USER: z.string(),
   POSTGRES_PASSWORD: z.string(),
   POSTGRES_DB: z.string(),
+  S3_REGION: z.string().optional(),
+  S3_ENDPOINT: z.string().optional(),
+  S3_FORCE_PATH_STYLE: zBooleanFromString.default(false),
+  S3_ACCESS_KEY_ID: z.string(),
+  S3_SECRET_ACCESS_KEY: z.string(),
 });
 
 const parsedEnv = envSchema.parse(process.env);

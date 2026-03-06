@@ -1,9 +1,9 @@
 import { HttpException, HttpStatus, Injectable, type OnModuleInit } from '@nestjs/common';
+import { ChannelsRepo } from './channels.repo';
 import type { ChannelId, ChannelWithUsers, UserId, UserWithStatus } from '../../../libs/api/entities';
 import { AuthService } from '../auth/auth.service';
 import { WebRTCService } from '../webrtc/webrtc.service';
 import { WsGateway } from '../ws/ws.gateway';
-import { ChannelsRepo } from './channels.repo';
 
 type ChannelRuntime = {
   userIds: Set<UserId>;

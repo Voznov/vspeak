@@ -1,18 +1,15 @@
 import { Injectable } from '@nestjs/common';
+import { UserEntity } from './auth.entity';
 import type { UserId, UserRole } from '../../../libs/api/entities';
 import { toDto } from '../../libs/validation';
 import { PostgresService } from '../postgres/postgres.service';
-import { UserEntity } from './auth.entity';
 
 @Injectable()
 export class AuthRepo {
   constructor(private readonly pg: PostgresService) {}
 
   async createUser(nickname: string, role: UserRole): Promise<UserEntity> {
-    const { rows } = await this.pg.query(
-      'INSERT INTO users (nickname, role) VALUES ($1, $2) RETURNING *',
-      [nickname, role],
-    );
+    const { rows } = await this.pg.query('INSERT INTO users (nickname, role) VALUES ($1, $2) RETURNING *', [nickname, role]);
 
     return toDto(UserEntity, rows[0]);
   }
