@@ -1,14 +1,8 @@
 import { CreateBucketCommand, DeleteObjectCommand, GetObjectCommand, HeadBucketCommand, PutObjectCommand, type PutObjectCommandInput, S3Client } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { Inject, Injectable, Logger, OnModuleInit } from '@nestjs/common';
-import { S3Bucket } from './s3.buckets';
-import { S3_CONFIG } from './s3.constants';
-import { type S3Config } from './s3.types';
-
-export interface S3Path {
-  bucket: S3Bucket;
-  key: string;
-}
+import { S3_CONFIG, S3Bucket } from './s3.constants';
+import { type S3Config, type S3Path } from './s3.types';
 
 @Injectable()
 export class S3Service implements OnModuleInit {

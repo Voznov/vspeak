@@ -39,6 +39,9 @@ import { createRpcInterface } from '../rpc.interface';
 abstract class Auth {
   abstract login(_: LoginRequest): Promise<LoginResponse>;
   abstract adminLogin(_: AdminLoginRequest): Promise<AdminLoginResponse>;
+}
+
+abstract class User {
   abstract getMe(_: GetMeRequest): Promise<GetMeResponse>;
 }
 
@@ -62,4 +65,4 @@ abstract class Voice {
   abstract setDeaf(_: SetDeafRequest): Promise<SetDeafResponse>;
 }
 
-export class Api extends createRpcInterface({ Auth, Channels, Voice }) {}
+export class Api extends createRpcInterface({ Auth, User, Channels, Voice }) {}

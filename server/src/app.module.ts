@@ -7,7 +7,7 @@ import { CreateChannels20260306002 } from './postgres/migrations/CreateChannels2
 import { CreateUsers20260306001 } from './postgres/migrations/CreateUsers20260306001';
 import { PostgresModule } from './postgres/postgres.module';
 import { S3Module } from './s3/s3.module';
-import { WebRtcModule } from './webrtc/webrtc.module';
+import { UserModule } from './user/user.module';
 
 @Module({
   imports: [
@@ -25,7 +25,7 @@ import { WebRtcModule } from './webrtc/webrtc.module';
       secretAccessKey: ENV.S3_SECRET_ACCESS_KEY,
     }),
     AuthModule,
-    WebRtcModule,
+    UserModule,
     ChannelsModule,
   ],
   controllers: [],

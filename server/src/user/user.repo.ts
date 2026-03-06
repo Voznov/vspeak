@@ -1,11 +1,11 @@
 import { Injectable } from '@nestjs/common';
-import { UserEntity } from './auth.entity';
+import { UserEntity } from './user.entity';
 import type { UserId, UserRole } from '../../../libs/api/entities';
 import { toDto } from '../../libs/validation';
 import { PostgresService } from '../postgres/postgres.service';
 
 @Injectable()
-export class AuthRepo {
+export class UserRepo {
   constructor(private readonly pg: PostgresService) {}
 
   async createUser(nickname: string, role: UserRole): Promise<UserEntity> {

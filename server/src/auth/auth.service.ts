@@ -1,7 +1,6 @@
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import jwt from 'jsonwebtoken';
-import { AuthRepo } from './auth.repo';
-import type { User, UserId, UserRole } from '../../../libs/api/entities';
+import type { UserId } from '../../../libs/api/entities';
 import { ENV } from '../env';
 
 type JWTPayload = {
@@ -10,8 +9,6 @@ type JWTPayload = {
 
 @Injectable()
 export class AuthService {
-  constructor(private readonly repo: AuthRepo) {}
-
   generateToken(userId: UserId): string {
     const payload: JWTPayload = { userId };
 
@@ -26,17 +23,5 @@ export class AuthService {
     } catch {
       throw new HttpException('Invalid token', HttpStatus.UNAUTHORIZED);
     }
-  }
-
-  async createUser(nickname: string, role: UserRole): Promise<User> {
-    return this.repo.createUser(nickname, role);
-  }
-
-  async getUser(userId: UserId): Promise<User | undefined> {
-    return this.repo.getUserById(userId);
-  }
-
-  async getUserByNickname(nickname: string): Promise<User | undefined> {
-    return this.repo.getUserByNickname(nickname);
   }
 }

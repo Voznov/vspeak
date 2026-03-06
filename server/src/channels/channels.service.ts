@@ -1,7 +1,7 @@
 import { HttpException, HttpStatus, Injectable, type OnModuleInit } from '@nestjs/common';
 import { ChannelsRepo } from './channels.repo';
 import type { ChannelId, ChannelWithUsers, UserId, UserWithStatus } from '../../../libs/api/entities';
-import { AuthService } from '../auth/auth.service';
+import { UserService } from '../user/user.service';
 import { WebRTCService } from '../webrtc/webrtc.service';
 import { WsGateway } from '../ws/ws.gateway';
 
@@ -16,7 +16,7 @@ export class ChannelsService implements OnModuleInit {
   constructor(
     private readonly repo: ChannelsRepo,
     private readonly webrtcService: WebRTCService,
-    private readonly authService: AuthService,
+    private readonly userService: UserService,
     private readonly wsGateway: WsGateway,
   ) {}
 
@@ -97,7 +97,7 @@ export class ChannelsService implements OnModuleInit {
     // Add the user to the channel
     rt.userIds.add(userId);
 
-    const user = await this.authService.getUser(userId);
+    const user = await this.userService.getUser(userId);
     if (user) {
       this.wsGateway.emitToAll('channelUserJoined', {
         channelId,
@@ -154,7 +154,7 @@ export class ChannelsService implements OnModuleInit {
 
     return Promise.all(
       [...rt.userIds].map(async (userId) => {
-        const user = await this.authService.getUser(userId);
+        const user = await this.userService.getUser(userId);
         if (!user) {
           throw new Error(`User ${userId} not found`);
         }
