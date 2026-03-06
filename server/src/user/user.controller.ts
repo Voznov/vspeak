@@ -6,7 +6,7 @@ import { getUserId } from '../auth/cls.helper';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { Rest, RestController } from '../utils/decorators';
 
-@RestController()
+@RestController('user')
 export class UserController extends Api.User {
   constructor(private readonly userService: UserService) {
     super();

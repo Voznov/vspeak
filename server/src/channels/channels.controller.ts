@@ -18,7 +18,7 @@ import { getUserId } from '../auth/cls.helper';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { Rest, RestController } from '../utils/decorators';
 
-@RestController()
+@RestController('channels')
 @UseGuards(JwtAuthGuard)
 export class ChannelsController extends Api.Channels {
   constructor(private readonly channelsService: ChannelsService) {

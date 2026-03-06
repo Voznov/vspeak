@@ -21,7 +21,7 @@ export function SpeakerButton({ isDeaf, onToggle, onSpeakerChange }: SpeakerButt
     deafEnabledStorage.set(next);
     onToggle(next);
     if (next) sounds.deafen(); else sounds.undeafen();
-    await api.setDeaf({ isDeaf: next });
+    await api.Voice.setDeaf({ isDeaf: next });
   };
 
   const loadDevices = async () => {

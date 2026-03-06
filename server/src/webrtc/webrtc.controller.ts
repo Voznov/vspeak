@@ -23,7 +23,7 @@ import { getUserId } from '../auth/cls.helper';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { Rest, RestController } from '../utils/decorators';
 
-@RestController()
+@RestController('voice')
 @UseGuards(JwtAuthGuard)
 export class WebRtcController extends Api.Voice {
   constructor(private readonly webrtcService: WebRTCService) {

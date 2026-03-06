@@ -27,7 +27,7 @@ export function CameraButton({ sendTransport, onLog }: CameraButtonProps) {
 
   const stop = async (silent = false) => {
     if (producerRef.current) {
-      await api.closeProducer({ producerId: producerRef.current.id as ProducerId });
+      await api.Voice.closeProducer({ producerId: producerRef.current.id as ProducerId });
       producerRef.current.close();
       producerRef.current = null;
     }

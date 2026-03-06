@@ -25,7 +25,7 @@ export function App() {
       }
 
       try {
-        const { user: restoredUser } = await api.getMe({});
+        const { user: restoredUser } = await api.User.getMe({});
         setUser(restoredUser);
       } catch (error) {
         // Token is invalid, clear it
@@ -99,7 +99,7 @@ export function App() {
   }, [user]);
 
   const refreshChannels = async () => {
-    const { channels: list } = await api.listChannels({});
+    const { channels: list } = await api.Channels.listChannels({});
     setChannels(list);
   };
 
@@ -117,17 +117,17 @@ export function App() {
 
   const handleLeave = async () => {
     if (!activeChannelId) return;
-    await api.leaveChannel({ channelId: activeChannelId });
+    await api.Channels.leaveChannel({ channelId: activeChannelId });
     setActiveChannelId(null);
   };
 
   const handleCreate = async (name: string) => {
-    await api.createChannel({ name });
+    await api.Channels.createChannel({ name });
   };
 
   const handleDelete = async (channelId: ChannelId) => {
     if (activeChannelId === channelId) await handleLeave();
-    await api.deleteChannel({ channelId });
+    await api.Channels.deleteChannel({ channelId });
   };
 
   if (loading) {

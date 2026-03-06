@@ -1,4 +1,4 @@
-import { type AnyAbstractClass, type UnionToIntersection } from './types';
+import { type AnyAbstractClass } from './types';
 
 export type RpcOptions = { timeoutMs?: number };
 
@@ -7,8 +7,15 @@ type MethodsWithRpcOptions<T> = {
 };
 
 type RpcInterface<Modules extends Record<string, AnyAbstractClass> = {}> = {
-  new (): UnionToIntersection<MethodsWithRpcOptions<InstanceType<Modules[keyof Modules]>>>;
+  new (): { [ModuleName in keyof Modules]: MethodsWithRpcOptions<InstanceType<Modules[ModuleName]>> };
 } & Modules;
 
 export const createRpcInterface = <Modules extends Record<string, AnyAbstractClass>>(modules: Modules): RpcInterface<Modules> =>
-  Object.assign(class {}, modules) as RpcInterface<Modules>;
+  Object.assign(
+    class {
+      constructor() {
+        Object.assign(this, modules);
+      }
+    },
+    modules,
+  ) as RpcInterface<Modules>;

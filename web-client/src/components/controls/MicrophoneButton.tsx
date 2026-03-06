@@ -31,7 +31,7 @@ export function MicrophoneButton({ sendTransport, isDeaf, onUndeafen, onLog }: M
 
   const stop = async (silent = false, preserveStorage = false) => {
     if (producerRef.current) {
-      await api.closeProducer({ producerId: producerRef.current.id as ProducerId });
+      await api.Voice.closeProducer({ producerId: producerRef.current.id as ProducerId });
       producerRef.current.close();
       producerRef.current = null;
     }

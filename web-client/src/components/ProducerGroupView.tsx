@@ -63,7 +63,7 @@ export function ProducerGroupView({
       connectedIdsRef.current.add(info.producerId);
 
       try {
-        const { consumerId, rtpParameters } = await api.consumeStream({
+        const { consumerId, rtpParameters } = await api.Voice.consumeStream({
           producerUserId: info.userId,
           producerId: info.producerId,
           rtpCapabilities: device.rtpCapabilities,
@@ -74,7 +74,7 @@ export function ProducerGroupView({
           kind: info.kind,
           rtpParameters,
         });
-        await api.resumeConsumer({ consumerId });
+        await api.Voice.resumeConsumer({ consumerId });
 
         const stream = new MediaStream([consumer.track]);
         if (info.kind === 'audio' && audioRef.current) {

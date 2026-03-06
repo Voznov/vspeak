@@ -50,7 +50,7 @@ export function ControlBar({ channelId, sendTransport, connecting, isDeaf, onDea
           deafEnabledStorage.set(false);
           onDeafToggle(false);
           sounds.undeafen();
-          void api.setDeaf({ isDeaf: false });
+          void api.Voice.setDeaf({ isDeaf: false });
         }}
         onLog={onLog}
       />

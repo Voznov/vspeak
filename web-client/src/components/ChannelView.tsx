@@ -106,7 +106,7 @@ export function ChannelView({ user, socket, channel, onLeave }: ChannelViewProps
     if (deviceRef.current) return deviceRef.current;
 
     const device = new Device();
-    const { capabilities, producerInfos: infos } = await api.getChannelInfo({ channelId: channel.id });
+    const { capabilities, producerInfos: infos } = await api.Voice.getChannelInfo({ channelId: channel.id });
     await device.load({ routerRtpCapabilities: capabilities });
     deviceRef.current = device;
     setProducerInfos(infos);
@@ -125,7 +125,7 @@ export function ChannelView({ user, socket, channel, onLeave }: ChannelViewProps
       setConnecting(true);
       const device = await initDevice();
 
-      const { send: sendData, recv: recvData } = await api.joinChannel({ channelId: channel.id });
+      const { send: sendData, recv: recvData } = await api.Channels.joinChannel({ channelId: channel.id });
 
       // Create send transport
       const newSendTransport = device.createSendTransport({
@@ -137,7 +137,7 @@ export function ChannelView({ user, socket, channel, onLeave }: ChannelViewProps
 
       newSendTransport.on('connect', async ({ dtlsParameters }, callback, errback) => {
         try {
-          await api.connectTransport({ transportId: sendData.transportId, dtlsParameters });
+          await api.Voice.connectTransport({ transportId: sendData.transportId, dtlsParameters });
           callback();
         } catch (error) {
           errback(error as Error);
@@ -147,7 +147,7 @@ export function ChannelView({ user, socket, channel, onLeave }: ChannelViewProps
       newSendTransport.on('produce', async ({ kind, rtpParameters, appData }, callback, errback) => {
         try {
           const source = ((appData as Record<string, unknown>).source as ProducerSource | undefined) ?? 'user';
-          const { producerId } = await api.produceStream({ kind, source, rtpParameters });
+          const { producerId } = await api.Voice.produceStream({ kind, source, rtpParameters });
           callback({ id: producerId });
         } catch (error) {
           errback(error as Error);
@@ -167,7 +167,7 @@ export function ChannelView({ user, socket, channel, onLeave }: ChannelViewProps
 
       newRecvTransport.on('connect', async ({ dtlsParameters }, callback, errback) => {
         try {
-          await api.connectTransport({ transportId: recvData.transportId, dtlsParameters });
+          await api.Voice.connectTransport({ transportId: recvData.transportId, dtlsParameters });
           callback();
         } catch (error) {
           errback(error as Error);
@@ -179,7 +179,7 @@ export function ChannelView({ user, socket, channel, onLeave }: ChannelViewProps
 
       // Sync deaf state to server — UserInfo is reset on each join
       if (deafEnabledStorage.get()) {
-        void api.setDeaf({ isDeaf: true });
+        void api.Voice.setDeaf({ isDeaf: true });
       }
       sounds.joinChannel();
     } catch (error) {

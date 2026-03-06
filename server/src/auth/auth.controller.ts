@@ -6,7 +6,7 @@ import { ENV } from '../env';
 import { UserService } from '../user/user.service';
 import { Rest, RestController } from '../utils/decorators';
 
-@RestController()
+@RestController('auth')
 export class AuthController extends Api.Auth {
   constructor(
     private readonly authService: AuthService,

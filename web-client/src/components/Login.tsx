@@ -23,7 +23,7 @@ export function Login({ onLogin }: LoginProps) {
     try {
       setLoading(true);
       setError(null);
-      const { token, user } = await api.login({ nickname: nickname.trim() });
+      const { token, user } = await api.Auth.login({ nickname: nickname.trim() });
       tokenStorage.set(token);
       onLogin(user);
     } catch (err) {
