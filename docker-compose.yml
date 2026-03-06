@@ -42,11 +42,11 @@ services:
       POSTGRES_DB: ${POSTGRES_DB}
     restart: unless-stopped
     healthcheck:
-      test: ["CMD-SHELL", "wget --quiet --tries=1 --spider http://localhost:3000; code=$?; [ $code -eq 0 ] || [ $code -eq 8 ]"]
-      interval: 30s
-      timeout: 10s
+      test: ["CMD-SHELL", "curl -s -o /dev/null http://localhost:3000/"]
+      interval: 5s
+      timeout: 3s
       retries: 3
-      start_period: 40s
+      start_period: 10s
 
   web-client:
     image: ghcr.io/voznov/vspeak-web-client:latest

@@ -2,6 +2,7 @@ let ctx: AudioContext | null = null;
 
 function getCtx(): AudioContext {
   ctx ??= new AudioContext();
+  if (ctx.state === 'suspended') void ctx.resume();
 
   return ctx;
 }
@@ -13,7 +14,7 @@ function bell(ac: AudioContext, freq: number, start: number, decay: number, vol 
   g.connect(ac.destination);
   o.type = 'sine';
   o.frequency.value = freq;
-  const t = ac.currentTime;
+  const t = ac.currentTime + 0.05;
   g.gain.setValueAtTime(0, t + start);
   g.gain.linearRampToValueAtTime(vol, t + start + 0.003);
   g.gain.exponentialRampToValueAtTime(0.001, t + start + decay);
@@ -34,7 +35,7 @@ function seqWarm(ac: AudioContext, freqs: number[], starts: number[], decay: num
     g.connect(ac.destination);
     o.type = 'triangle';
     o.frequency.value = f * 2;
-    const t = ac.currentTime;
+    const t = ac.currentTime + 0.05;
     g.gain.setValueAtTime(0, t + starts[i]);
     g.gain.linearRampToValueAtTime(0.05, t + starts[i] + 0.003);
     g.gain.exponentialRampToValueAtTime(0.001, t + starts[i] + (decay - i * 0.02) * 0.5);
@@ -44,7 +45,7 @@ function seqWarm(ac: AudioContext, freqs: number[], starts: number[], decay: num
 }
 
 function fm(ac: AudioContext, freq: number, delay: number) {
-  const t = ac.currentTime + delay;
+  const t = ac.currentTime + 0.05 + delay;
   const decay = 0.4;
   const mod = ac.createOscillator();
   const modGain = ac.createGain();

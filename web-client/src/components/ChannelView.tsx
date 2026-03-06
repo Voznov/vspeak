@@ -9,14 +9,13 @@ import { ProducerGroupView, type ProducerGroup } from './ProducerGroupView';
 import { useToast } from './ToastProvider';
 import { theme } from '../theme';
 import { calculateGrid } from '../utils/calculateGrid';
-import type { ChannelId, ProducerInfo, ProducerSource, User, WsEvents } from '../../../libs/api/entities';
+import type { ChannelWithUsers, ProducerInfo, ProducerSource, User, WsEvents } from '../../../libs/api/entities';
 import { sounds } from '../sounds';
 
 type ChannelViewProps = {
   user: User;
-  channelId: ChannelId;
+  channel: ChannelWithUsers;
   socket: Socket;
-  channelUsers: User[];
   onLeave: () => void;
 };
 
@@ -38,7 +37,7 @@ const groupProducers = (infos: ProducerInfo[], channelUsers: User[]): ProducerGr
   );
 };
 
-export function ChannelView({ user, channelId, socket, channelUsers, onLeave }: ChannelViewProps) {
+export function ChannelView({ user, socket, channel, onLeave }: ChannelViewProps) {
   const deviceRef = useRef<Device | null>(null);
   const [sendTransport, setSendTransport] = useState<Transport | null>(null);
   const [recvTransport, setRecvTransport] = useState<Transport | null>(null);
@@ -54,10 +53,10 @@ export function ChannelView({ user, channelId, socket, channelUsers, onLeave }: 
 
   const addLog = useToast();
 
-  const channelIdRef = useRef(channelId);
-  channelIdRef.current = channelId;
-  const channelUsersRef = useRef(channelUsers);
-  channelUsersRef.current = channelUsers;
+  const channelIdRef = useRef(channel.id);
+  channelIdRef.current = channel.id;
+  const channelUsersRef = useRef(channel.users);
+  channelUsersRef.current = channel.users;
 
   // Subscribe to channel-scoped WebSocket events
   useEffect(() => {
@@ -107,7 +106,7 @@ export function ChannelView({ user, channelId, socket, channelUsers, onLeave }: 
     if (deviceRef.current) return deviceRef.current;
 
     const device = new Device();
-    const { capabilities, producerInfos: infos } = await api.getChannelInfo({ channelId });
+    const { capabilities, producerInfos: infos } = await api.getChannelInfo({ channelId: channel.id });
     await device.load({ routerRtpCapabilities: capabilities });
     deviceRef.current = device;
     setProducerInfos(infos);
@@ -126,7 +125,7 @@ export function ChannelView({ user, channelId, socket, channelUsers, onLeave }: 
       setConnecting(true);
       const device = await initDevice();
 
-      const { send: sendData, recv: recvData } = await api.joinChannel({ channelId });
+      const { send: sendData, recv: recvData } = await api.joinChannel({ channelId: channel.id });
 
       // Create send transport
       const newSendTransport = device.createSendTransport({
@@ -199,7 +198,7 @@ export function ChannelView({ user, channelId, socket, channelUsers, onLeave }: 
       sendTransportRef.current = null;
       recvTransportRef.current = null;
     };
-  }, [channelId]);
+  }, [channel.id]);
 
   // Track grid container size for optimal layout calculation
   useEffect(() => {
@@ -213,8 +212,13 @@ export function ChannelView({ user, channelId, socket, channelUsers, onLeave }: 
     return () => observer.disconnect();
   }, []);
 
-  const groups = groupProducers(producerInfos, channelUsers);
-  const { columns, rows, blockWidth, blockHeight } = calculateGrid(gridSize.width, gridSize.height, groups.length, 16 / 9);
+  const groups = groupProducers(producerInfos, channel.users);
+  const { columns, rows, blockWidth, blockHeight } = calculateGrid(
+    gridSize.width,
+    gridSize.height,
+    groups.length,
+    16 / 9,
+  );
 
   return (
     <div style={{ height: '100%', display: 'flex', flexDirection: 'column', position: 'relative', overflow: 'hidden' }}>
@@ -235,13 +239,17 @@ export function ChannelView({ user, channelId, socket, channelUsers, onLeave }: 
         {Array.from({ length: rows }, (_, rowIndex) => (
           <div key={rowIndex} style={{ display: 'flex', gap: '6px' }}>
             {groups.slice(rowIndex * columns, (rowIndex + 1) * columns).map((group) => (
-              <div key={`${group.userId}:${group.source}`} style={{ width: blockWidth, height: blockHeight, flexShrink: 0 }}>
+              <div
+                key={`${group.userId}:${group.source}`}
+                style={{ width: blockWidth, height: blockHeight, flexShrink: 0 }}
+              >
                 <ProducerGroupView
                   group={group}
                   recvTransport={recvTransport}
                   device={deviceRef.current}
                   isSelf={group.userId === user.id}
                   isDeaf={isDeaf}
+                  isDeafUser={channelUsersRef.current.some((u) => u.id === group.userId && u.isDeaf)}
                   speakerDeviceId={speakerDeviceId}
                   onLog={addLog}
                 />
@@ -270,7 +278,7 @@ export function ChannelView({ user, channelId, socket, channelUsers, onLeave }: 
       )}
 
       <ControlBar
-        channelId={channelId}
+        channelId={channel.id}
         sendTransport={sendTransport}
         connecting={connecting}
         isDeaf={isDeaf}
@@ -280,7 +288,10 @@ export function ChannelView({ user, channelId, socket, channelUsers, onLeave }: 
           setSpeakerDeviceId(deviceId);
         }}
         onLog={addLog}
-        onLeave={() => { sounds.leaveChannel(); onLeave(); }}
+        onLeave={() => {
+          sounds.leaveChannel();
+          onLeave();
+        }}
       />
     </div>
   );

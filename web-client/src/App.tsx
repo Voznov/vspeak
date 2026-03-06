@@ -157,12 +157,11 @@ export function App() {
         onDelete={handleDelete}
       />
       <div style={{ flex: 1, overflow: 'hidden' }}>
-        {activeChannelId && socket ? (
+        {activeChannel && socket ? (
           <ChannelView
             user={user}
-            channelId={activeChannelId}
+            channel={activeChannel}
             socket={socket}
-            channelUsers={activeChannel?.users ?? []}
             onLeave={handleLeave}
           />
         ) : (

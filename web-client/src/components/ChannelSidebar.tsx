@@ -21,7 +21,14 @@ type ContextMenu = {
   y: number;
 };
 
-export function ChannelSidebar({ channels, activeChannelId, onJoin, onLeave, onCreate, onDelete }: ChannelSidebarProps) {
+export function ChannelSidebar({
+  channels,
+  activeChannelId,
+  onJoin,
+  onLeave,
+  onCreate,
+  onDelete,
+}: ChannelSidebarProps) {
   const [showModal, setShowModal] = useState(false);
   const [newName, setNewName] = useState('');
   const [creating, setCreating] = useState(false);
@@ -174,10 +181,13 @@ export function ChannelSidebar({ channels, activeChannelId, onJoin, onLeave, onC
                           {user.nickname}
                         </span>
                         <div style={{ display: 'flex', gap: '4px', flexShrink: 0, color: theme.text.secondary }}>
-                          {!user.hasMic && <MicOffIcon width={14} height={14} />}
+                          {user.isDeaf ? (
+                            <HeadphonesOffIcon width={14} height={14} />
+                          ) : (
+                            !user.hasMic && <MicOffIcon width={14} height={14} />
+                          )}
                           {user.hasVideo && <VideoIcon width={14} height={14} />}
                           {user.hasScreen && <ScreenShareIcon width={14} height={14} />}
-                          {user.isDeaf && <HeadphonesOffIcon width={14} height={14} />}
                         </div>
                       </div>
                     ))}

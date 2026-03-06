@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import type { Device } from 'mediasoup-client';
 import MicOffIcon from '../assets/mic-off.svg?react';
 import ScreenShareIcon from '../assets/screen-share.svg?react';
+import HeadphonesOffIcon from '../assets/headphones-off.svg?react';
 import { theme } from '../theme';
 import type { RtpParameters, Transport } from 'mediasoup-client/types';
 import { api } from '../api';
@@ -22,6 +23,7 @@ type Props = {
   device: Device | null;
   isSelf: boolean;
   isDeaf: boolean;
+  isDeafUser: boolean;
   speakerDeviceId?: string;
   onLog: (entry: string) => void;
 };
@@ -31,7 +33,16 @@ const ANALYSER_SMOOTHING = 0.3;
 const SPEAKING_THRESHOLD = 8; // 0–255 average frequency amplitude
 const SPEAKING_HOLD_MS = 200; // delay before border disappears after silence
 
-export function ProducerGroupView({ group, recvTransport, device, isSelf, isDeaf, speakerDeviceId, onLog }: Props) {
+export function ProducerGroupView({
+  group,
+  recvTransport,
+  device,
+  isSelf,
+  isDeaf,
+  isDeafUser,
+  speakerDeviceId,
+  onLog,
+}: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const audioRef = useRef<HTMLAudioElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -160,12 +171,8 @@ export function ProducerGroupView({ group, recvTransport, device, isSelf, isDeaf
     }
   };
 
-  const overlayIcon =
-    group.source === 'display' ? (
-      <ScreenShareIcon width={16} height={16} style={{ flexShrink: 0, marginRight: hovered ? '4px' : 0 }} />
-    ) : group.audio ? null : (
-      <MicOffIcon width={16} height={16} style={{ flexShrink: 0, marginRight: hovered ? '4px' : 0 }} />
-    );
+  const OverlayIcon =
+    group.source === 'display' ? ScreenShareIcon : isDeafUser ? HeadphonesOffIcon : group.audio ? null : MicOffIcon;
 
   return (
     <div
@@ -229,7 +236,7 @@ export function ProducerGroupView({ group, recvTransport, device, isSelf, isDeaf
           </div>
         )}
 
-        {(overlayIcon !== null || hovered) && (
+        {(OverlayIcon || hovered) && (
           <div
             style={{
               position: 'absolute',
@@ -247,7 +254,9 @@ export function ProducerGroupView({ group, recvTransport, device, isSelf, isDeaf
               transition: 'opacity 0.2s',
             }}
           >
-            {overlayIcon}
+            {OverlayIcon && (
+              <OverlayIcon width={16} height={16} style={{ flexShrink: 0, marginRight: hovered ? '4px' : 0 }} />
+            )}
             {hovered && group.nickname}
           </div>
         )}
