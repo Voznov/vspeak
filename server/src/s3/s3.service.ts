@@ -16,11 +16,13 @@ import { type S3Config, type S3Path } from './s3.types';
 @Injectable()
 export class S3Service implements OnModuleInit {
   private readonly client: S3Client;
+  // Separate client used only for presigning — uses the public endpoint so the
+  // signed host matches the host the browser will actually connect to.
+  private readonly presignClient: S3Client;
   private readonly logger = new Logger(S3Service.name);
-  private readonly publicEndpoint: string | undefined;
 
   constructor(@Inject(S3_CONFIG) config: S3Config) {
-    this.client = new S3Client({
+    const clientOptions = {
       region: config.region,
       endpoint: config.endpoint,
       forcePathStyle: config.forcePathStyle,
@@ -28,8 +30,10 @@ export class S3Service implements OnModuleInit {
         accessKeyId: config.accessKeyId,
         secretAccessKey: config.secretAccessKey,
       },
-    });
-    this.publicEndpoint = config.publicEndpoint;
+    };
+
+    this.client = new S3Client(clientOptions);
+    this.presignClient = config.publicEndpoint ? new S3Client({ ...clientOptions, endpoint: config.publicEndpoint }) : this.client;
   }
 
   async onModuleInit(): Promise<void> {
@@ -58,30 +62,13 @@ export class S3Service implements OnModuleInit {
   }
 
   async getPresignedUploadUrl({ bucket, key }: S3Path, contentType: string, expiresIn: number): Promise<string> {
-    const url = await getSignedUrl(this.client, new PutObjectCommand({ Bucket: bucket, Key: key, ContentType: contentType }), { expiresIn });
-
-    return this.toPublicUrl(url);
+    return getSignedUrl(this.presignClient, new PutObjectCommand({ Bucket: bucket, Key: key, ContentType: contentType }), { expiresIn });
   }
 
   async getPresignedDownloadUrl({ bucket, key }: S3Path, expiresIn: number): Promise<string | undefined> {
     if (!(await this.objectExists({ bucket, key }))) return undefined;
 
-    const url = await getSignedUrl(this.client, new GetObjectCommand({ Bucket: bucket, Key: key }), { expiresIn });
-
-    return this.toPublicUrl(url);
-  }
-
-  private toPublicUrl(url: string): string {
-    if (!this.publicEndpoint) return url;
-    // Replace the internal S3 endpoint with the public-facing one
-    const parsed = new URL(url);
-    const publicParsed = new URL(this.publicEndpoint);
-    parsed.protocol = publicParsed.protocol;
-    parsed.hostname = publicParsed.hostname;
-    parsed.port = publicParsed.port;
-    parsed.pathname = publicParsed.pathname.replace(/\/$/, '') + parsed.pathname;
-
-    return parsed.toString();
+    return getSignedUrl(this.presignClient, new GetObjectCommand({ Bucket: bucket, Key: key }), { expiresIn });
   }
 
   private async ensureBucket(bucket: S3Bucket): Promise<void> {
