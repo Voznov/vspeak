@@ -77,7 +77,8 @@ export class S3Service implements OnModuleInit {
     const parsed = new URL(url);
     const publicParsed = new URL(this.publicEndpoint);
     parsed.protocol = publicParsed.protocol;
-    parsed.host = publicParsed.host;
+    parsed.hostname = publicParsed.hostname;
+    parsed.port = publicParsed.port;
     parsed.pathname = publicParsed.pathname.replace(/\/$/, '') + parsed.pathname;
 
     return parsed.toString();
