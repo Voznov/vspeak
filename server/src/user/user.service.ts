@@ -30,7 +30,7 @@ export class UserService {
   }
 
   async appendAvatarUrl<T extends User>(user: T): Promise<T> {
-    const avatarUrl = await this.s3.getPresignedDownloadUrl({ bucket: S3Bucket.Avatars, key: user.id }, AVATAR_URL_TTL).catch(() => undefined);
+    const avatarUrl = await this.s3.getPresignedDownloadUrl({ bucket: S3Bucket.Avatars, key: user.id }, AVATAR_URL_TTL);
 
     return { ...user, avatarUrl };
   }

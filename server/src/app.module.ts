@@ -20,6 +20,7 @@ import { UserModule } from './user/user.module';
     S3Module.register({
       region: ENV.S3_REGION,
       endpoint: ENV.S3_ENDPOINT,
+      publicEndpoint: ENV.S3_PUBLIC_ENDPOINT,
       forcePathStyle: ENV.S3_FORCE_PATH_STYLE,
       accessKeyId: ENV.S3_ACCESS_KEY_ID,
       secretAccessKey: ENV.S3_SECRET_ACCESS_KEY,

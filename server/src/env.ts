@@ -21,6 +21,7 @@ const envSchema = z.object({
   POSTGRES_DB: z.string(),
   S3_REGION: z.string().default('us-east-1'),
   S3_ENDPOINT: z.string().optional(),
+  S3_PUBLIC_ENDPOINT: z.string().optional(),
   S3_FORCE_PATH_STYLE: zBooleanFromString.default(false),
   S3_ACCESS_KEY_ID: z.string(),
   S3_SECRET_ACCESS_KEY: z.string(),
