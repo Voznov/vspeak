@@ -12,6 +12,7 @@
     "build": "pnpm -r build",
     "lint": "eslint",
     "lint:fix": "eslint --fix",
+    "infra:up": "docker compose -f local/docker-compose.yml up -d",
     "dev:server": "pnpm --filter server dev",
     "dev:client": "pnpm --filter web-client dev",
     "dev": "pnpm -r --parallel dev"

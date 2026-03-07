@@ -1,7 +1,7 @@
 import { type S3Bucket } from './s3.constants';
 
 export interface S3Config {
-  region?: string;
+  region: string;
   endpoint?: string;
   forcePathStyle: boolean;
   accessKeyId: string;

@@ -4,11 +4,16 @@ Self-hosted voice & text communication platform with WebRTC
 
 ## Development
 
+Requires Docker for local infrastructure (PostgreSQL + MinIO).
+
 ```bash
 # Install dependencies
 pnpm install
 
-# Development (all services)
+# Start local infrastructure (PostgreSQL + MinIO)
+pnpm infra:up
+
+# Development (all services in parallel)
 pnpm dev
 
 # Development (separate terminals)
@@ -23,11 +28,7 @@ pnpm lint
 pnpm lint:fix
 ```
 
-Start the local PostgreSQL instance (requires Docker):
-
-```bash
-docker compose -f local/docker-compose.yml up -d
-```
+Configure local environment in `server/.env.local` (see `server/.env.example` if available). MinIO is available at `http://localhost:9000`, console at `http://localhost:9001`.
 
 ## Deployment
 
