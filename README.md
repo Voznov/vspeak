@@ -2,6 +2,33 @@
 
 Self-hosted voice & text communication platform with WebRTC
 
+## Deployment
+
+### Prerequisites
+
+- Docker & Docker Compose
+- SSL certificates for your domain (required for HTTPS, which browsers enforce for microphone/camera access)
+
+### Setup
+
+1. Create `.env.prod` from the example and fill in all empty values:
+
+   ```bash
+   cp .env.prod.example .env.prod
+   ```
+
+2. Start:
+
+   ```bash
+   docker compose --env-file .env.prod up -d
+   ```
+
+### Updates
+
+```bash
+git pull && docker compose --env-file .env.prod pull && docker compose --env-file .env.prod up -d && docker compose --env-file .env.prod restart nginx
+```
+
 ## Development
 
 Requires Docker for local infrastructure (PostgreSQL + MinIO).
@@ -28,31 +55,4 @@ pnpm lint
 pnpm lint:fix
 ```
 
-Configure local environment in `server/.env.local` (see `server/.env.example` if available). MinIO is available at `http://localhost:9000`, console at `http://localhost:9001`.
-
-## Deployment
-
-### Prerequisites
-
-- Docker & Docker Compose
-- SSL certificates for your domain (required for HTTPS, which browsers enforce for microphone/camera access)
-
-### Setup
-
-1. Create `.env.prod` from the example and fill in all empty values:
-
-   ```bash
-   cp .env.prod.example .env.prod
-   ```
-
-2. Start:
-
-   ```bash
-   docker compose --env-file .env.prod up -d
-   ```
-
-### Updates
-
-```bash
-git pull && docker compose --env-file .env.prod pull && docker compose --env-file .env.prod up -d
-```
+Configure local environment in `server/.env.local` if it needs to be changed.

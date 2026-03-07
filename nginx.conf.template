@@ -35,6 +35,23 @@ http {
         ssl_certificate /etc/nginx/ssl/fullchain.pem;
         ssl_certificate_key /etc/nginx/ssl/privkey.pem;
 
-        include /etc/nginx/locations.conf;
+        client_max_body_size 10M;
+
+        # API requests → server (strips /api prefix)
+        location /api/ {
+            proxy_pass http://server/;
+        }
+
+        # WebSocket → server
+        location /socket.io/ {
+            proxy_pass http://server;
+            proxy_set_header Upgrade $http_upgrade;
+            proxy_set_header Connection "upgrade";
+        }
+
+        # Everything else → web-client (static files)
+        location / {
+            proxy_pass http://web-client;
+        }
     }
 }
