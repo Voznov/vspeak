@@ -13,6 +13,7 @@ export class UserDto extends ZodDto(
     id: zUserId,
     nickname: z.string(),
     role: z.enum(['user', 'admin']),
+    avatarUrl: z.string().optional(),
   }),
 ) {}
 
@@ -21,6 +22,7 @@ export class UserWithStatusDto extends ZodDto(
     id: zUserId,
     nickname: z.string(),
     role: z.enum(['user', 'admin']),
+    avatarUrl: z.string().optional(),
     hasMic: z.boolean(),
     hasVideo: z.boolean(),
     hasScreen: z.boolean(),

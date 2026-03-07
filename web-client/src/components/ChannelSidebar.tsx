@@ -1,18 +1,22 @@
 import { useEffect, useRef, useState } from 'react';
-import type { ChannelId, ChannelWithUsers } from '../../../libs/api/entities';
+import type { ChannelId, ChannelWithUsers, User, UserId } from '../../../libs/api/entities';
 import HeadphonesOffIcon from '../assets/headphones-off.svg?react';
 import MicOffIcon from '../assets/mic-off.svg?react';
 import ScreenShareIcon from '../assets/screen-share.svg?react';
 import VideoIcon from '../assets/video.svg?react';
 import { theme } from '../theme';
+import { UserAvatar } from './UserAvatar';
 
 type ChannelSidebarProps = {
   channels: ChannelWithUsers[];
   activeChannelId: ChannelId | null;
+  currentUser: User;
+  speakingUserIds: Set<UserId>;
   onJoin: (channelId: ChannelId) => void;
   onLeave: () => Promise<void>;
   onCreate: (name: string) => Promise<void>;
   onDelete: (channelId: ChannelId) => Promise<void>;
+  onOpenSettings: () => void;
 };
 
 type ContextMenu = {
@@ -24,15 +28,19 @@ type ContextMenu = {
 export function ChannelSidebar({
   channels,
   activeChannelId,
+  currentUser,
+  speakingUserIds,
   onJoin,
   onLeave,
   onCreate,
   onDelete,
+  onOpenSettings,
 }: ChannelSidebarProps) {
   const [showModal, setShowModal] = useState(false);
   const [newName, setNewName] = useState('');
   const [creating, setCreating] = useState(false);
   const [contextMenu, setContextMenu] = useState<ContextMenu | null>(null);
+  const [panelHovered, setPanelHovered] = useState(false);
   const modalInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -97,109 +105,157 @@ export function ChannelSidebar({
           borderRight: `1px solid ${theme.border.primary}`,
           display: 'flex',
           flexDirection: 'column',
-          padding: '12px 8px',
-          gap: '4px',
           background: theme.bg.secondary,
         }}
       >
-        <div style={{ display: 'flex', alignItems: 'center', marginBottom: '8px', paddingLeft: '4px' }}>
-          <div style={{ flex: 1, fontWeight: 700, fontSize: '13px', color: theme.text.heading }}>CHANNELS</div>
-          <button
-            onClick={() => setShowModal(true)}
-            title="Create channel"
-            style={{
-              width: '22px',
-              height: '22px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              padding: 0,
-              fontSize: '18px',
-              lineHeight: 1,
-              fontWeight: 400,
-              background: 'transparent',
-              border: 'none',
-              borderRadius: '4px',
-              color: theme.text.heading,
-              cursor: 'pointer',
-            }}
-          >
-            +
-          </button>
-        </div>
+        {/* Channel list */}
+        <div style={{ flex: 1, overflowY: 'auto', padding: '12px 8px', display: 'flex', flexDirection: 'column', gap: '4px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', marginBottom: '8px', paddingLeft: '4px' }}>
+            <div style={{ flex: 1, fontWeight: 700, fontSize: '13px', color: theme.text.heading }}>CHANNELS</div>
+            <button
+              onClick={() => setShowModal(true)}
+              title="Create channel"
+              style={{
+                width: '22px',
+                height: '22px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                padding: 0,
+                fontSize: '18px',
+                lineHeight: 1,
+                fontWeight: 400,
+                background: 'transparent',
+                border: 'none',
+                borderRadius: '4px',
+                color: theme.text.heading,
+                cursor: 'pointer',
+              }}
+            >
+              +
+            </button>
+          </div>
 
-        <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '2px' }}>
-          {channels.map((channel) => {
-            const isActive = channel.id === activeChannelId;
-            return (
-              <div key={channel.id}>
-                <div
-                  onClick={() => onJoin(channel.id)}
-                  onContextMenu={(e) => handleContextMenu(e, channel.id)}
-                  style={{
-                    padding: '6px 8px',
-                    borderRadius: '6px',
-                    background: isActive ? theme.accent.primary : 'transparent',
-                    color: isActive ? theme.text.onAccent : theme.text.primary,
-                    cursor: 'pointer',
-                    fontSize: '14px',
-                    fontWeight: isActive ? 600 : 400,
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                    whiteSpace: 'nowrap',
-                    userSelect: 'none',
-                  }}
-                >
-                  # {channel.name}
-                </div>
-
-                {channel.users.length > 0 && (
+          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '2px' }}>
+            {channels.map((channel) => {
+              const isActive = channel.id === activeChannelId;
+              return (
+                <div key={channel.id}>
                   <div
+                    onClick={() => onJoin(channel.id)}
+                    onContextMenu={(e) => handleContextMenu(e, channel.id)}
                     style={{
-                      marginTop: '2px',
-                      marginBottom: '4px',
-                      paddingLeft: '14px',
-                      display: 'flex',
-                      flexDirection: 'column',
-                      gap: '1px',
+                      padding: '6px 8px',
+                      borderRadius: '6px',
+                      background: isActive ? theme.accent.primary : 'transparent',
+                      color: isActive ? theme.text.onAccent : theme.text.primary,
+                      cursor: 'pointer',
+                      fontSize: '14px',
+                      fontWeight: isActive ? 600 : 400,
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap',
+                      userSelect: 'none',
                     }}
                   >
-                    {channel.users.map((user) => (
-                      <div
-                        key={user.id}
-                        style={{
-                          fontSize: '12px',
-                          color: theme.text.primary,
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '6px',
-                          padding: '4px 0',
-                        }}
-                      >
-                        <span style={{ color: theme.accent.primary, fontSize: '8px' }}>●</span>
-                        <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                          {user.nickname}
-                        </span>
-                        <div style={{ display: 'flex', gap: '4px', flexShrink: 0, color: theme.text.secondary }}>
-                          {user.isDeaf ? (
-                            <HeadphonesOffIcon width={14} height={14} />
-                          ) : (
-                            !user.hasMic && <MicOffIcon width={14} height={14} />
-                          )}
-                          {user.hasVideo && <VideoIcon width={14} height={14} />}
-                          {user.hasScreen && <ScreenShareIcon width={14} height={14} />}
-                        </div>
-                      </div>
-                    ))}
+                    # {channel.name}
                   </div>
-                )}
-              </div>
-            );
-          })}
 
-          {channels.length === 0 && (
-            <div style={{ fontSize: '13px', color: theme.text.secondary, padding: '8px 4px' }}>No channels yet</div>
-          )}
+                  {channel.users.length > 0 && (
+                    <div
+                      style={{
+                        marginTop: '2px',
+                        marginBottom: '4px',
+                        paddingLeft: '14px',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: '1px',
+                      }}
+                    >
+                      {channel.users.map((user) => (
+                        <div
+                          key={user.id}
+                          style={{
+                            fontSize: '12px',
+                            color: theme.text.primary,
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '6px',
+                            padding: '3px 0',
+                          }}
+                        >
+                          <UserAvatar
+                            userId={user.id}
+                            nickname={user.nickname}
+                            avatarUrl={user.avatarUrl}
+                            size={18}
+                            isSpeaking={speakingUserIds.has(user.id)}
+                          />
+                          <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                            {user.nickname}
+                          </span>
+                          <div style={{ display: 'flex', gap: '4px', flexShrink: 0, color: theme.text.secondary }}>
+                            {user.isDeaf ? (
+                              <HeadphonesOffIcon width={14} height={14} />
+                            ) : (
+                              !user.hasMic && <MicOffIcon width={14} height={14} />
+                            )}
+                            {user.hasVideo && <VideoIcon width={14} height={14} />}
+                            {user.hasScreen && <ScreenShareIcon width={14} height={14} />}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+
+            {channels.length === 0 && (
+              <div style={{ fontSize: '13px', color: theme.text.secondary, padding: '8px 4px' }}>No channels yet</div>
+            )}
+          </div>
+        </div>
+
+        {/* Current user panel */}
+        <div
+          onClick={onOpenSettings}
+          onMouseEnter={() => setPanelHovered(true)}
+          onMouseLeave={() => setPanelHovered(false)}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '10px',
+            padding: '10px 12px',
+            borderTop: `1px solid ${theme.border.primary}`,
+            cursor: 'pointer',
+            background: panelHovered ? theme.bg.tertiary : 'transparent',
+            transition: 'background 0.15s',
+            userSelect: 'none',
+          }}
+        >
+          <UserAvatar
+            userId={currentUser.id}
+            nickname={currentUser.nickname}
+            avatarUrl={currentUser.avatarUrl}
+            size={32}
+            isSpeaking={speakingUserIds.has(currentUser.id)}
+          />
+          <div style={{ flex: 1, overflow: 'hidden' }}>
+            <div
+              style={{
+                fontSize: '13px',
+                fontWeight: 600,
+                color: theme.text.primary,
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap',
+              }}
+            >
+              {currentUser.nickname}
+            </div>
+            <div style={{ fontSize: '11px', color: theme.text.secondary }}>Settings</div>
+          </div>
         </div>
       </div>
 

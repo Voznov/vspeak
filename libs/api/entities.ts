@@ -8,6 +8,7 @@ export type User = {
   id: UserId;
   nickname: string;
   role: UserRole;
+  avatarUrl?: string;
 };
 
 export type Channel = {
@@ -309,6 +310,18 @@ export type SetDeafResponse = {
   success: boolean;
 };
 
+export type UpdateAvatarRequest = {};
+
+export type UpdateAvatarResponse = {
+  uploadUrl: string;
+};
+
+export type ConfirmAvatarUploadRequest = {};
+
+export type ConfirmAvatarUploadResponse = {
+  user: User;
+};
+
 // WebSocket event types
 export type WsEvents = {
   channelUserJoined: { channelId: ChannelId; user: UserWithStatus };
@@ -317,5 +330,6 @@ export type WsEvents = {
   producerCreated: { info: ProducerInfo };
   producerClosed: { producerId: ProducerId; userId: UserId };
   channelCreated: { channel: ChannelWithUsers };
+  userUpdated: { user: User };
   channelDeleted: { channelId: ChannelId };
 };

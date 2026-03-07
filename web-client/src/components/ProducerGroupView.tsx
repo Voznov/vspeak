@@ -4,14 +4,16 @@ import MicOffIcon from '../assets/mic-off.svg?react';
 import ScreenShareIcon from '../assets/screen-share.svg?react';
 import HeadphonesOffIcon from '../assets/headphones-off.svg?react';
 import { theme } from '../theme';
-import type { RtpParameters, Transport } from 'mediasoup-client/types';
+import type { Transport } from 'mediasoup-client/types';
 import { api } from '../api';
 import type { ProducerInfo, ProducerSource, UserId } from '../../../libs/api/entities';
 import { getUserColor } from '../utils/userColor';
+import { UserAvatar } from './UserAvatar';
 
 export type ProducerGroup = {
   userId: UserId;
   nickname: string;
+  avatarUrl?: string;
   source: ProducerSource;
   audio?: ProducerInfo;
   video?: ProducerInfo;
@@ -26,6 +28,7 @@ type Props = {
   isDeafUser: boolean;
   speakerDeviceId?: string;
   onLog: (entry: string) => void;
+  onSpeakingChange: (userId: UserId, speaking: boolean) => void;
 };
 
 const ANALYSER_FFT_SIZE = 512;
@@ -42,6 +45,7 @@ export function ProducerGroupView({
   isDeafUser,
   speakerDeviceId,
   onLog,
+  onSpeakingChange,
 }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const audioRef = useRef<HTMLAudioElement>(null);
@@ -53,6 +57,14 @@ export function ProducerGroupView({
   const [hasVideo, setHasVideo] = useState(false);
   const [hovered, setHovered] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
+
+  const onSpeakingChangeRef = useRef(onSpeakingChange);
+  onSpeakingChangeRef.current = onSpeakingChange;
+
+  const setSpeaking = (value: boolean) => {
+    setIsSpeaking(value);
+    onSpeakingChangeRef.current(group.userId, value);
+  };
 
   // Auto-connect when transport/device become available or new producers appear
   useEffect(() => {
@@ -110,10 +122,10 @@ export function ProducerGroupView({
                 clearTimeout(speakingTimeoutRef.current);
                 speakingTimeoutRef.current = null;
               }
-              setIsSpeaking(true);
+              setSpeaking(true);
             } else if (speakingTimeoutRef.current === null) {
               speakingTimeoutRef.current = setTimeout(() => {
-                setIsSpeaking(false);
+                setSpeaking(false);
                 speakingTimeoutRef.current = null;
               }, SPEAKING_HOLD_MS);
             }
@@ -154,8 +166,9 @@ export function ProducerGroupView({
       if (rafRef.current !== null) cancelAnimationFrame(rafRef.current);
       if (speakingTimeoutRef.current !== null) clearTimeout(speakingTimeoutRef.current);
       audioContextRef.current?.close();
+      onSpeakingChangeRef.current(group.userId, false);
     };
-  }, []);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // React to video producer being removed
   useEffect(() => {
@@ -227,12 +240,14 @@ export function ProducerGroupView({
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              color: theme.text.onAccent,
-              fontSize: '18px',
-              fontWeight: 600,
             }}
           >
-            {group.nickname}
+            <UserAvatar
+              userId={group.userId}
+              nickname={group.nickname}
+              avatarUrl={group.avatarUrl}
+              size={72}
+            />
           </div>
         )}
 

@@ -7,3 +7,15 @@ export class GetMeResponseDto extends ZodDto(
     user: UserDto,
   }),
 ) {}
+
+export class UpdateAvatarResponseDto extends ZodDto(
+  z.object({
+    uploadUrl: z.string(),
+  }),
+) {}
+
+export class ConfirmAvatarUploadResponseDto extends ZodDto(
+  z.object({
+    user: UserDto,
+  }),
+) {}

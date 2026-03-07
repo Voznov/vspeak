@@ -1,6 +1,6 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Device } from 'mediasoup-client';
-import type { DtlsParameters, IceCandidate, IceParameters, RtpCapabilities, Transport } from 'mediasoup-client/types';
+import type { Transport } from 'mediasoup-client/types';
 import type { Socket } from 'socket.io-client';
 import { api } from '../api';
 import { deafEnabledStorage, speakerDeviceStorage } from '../storage';
@@ -9,7 +9,7 @@ import { ProducerGroupView, type ProducerGroup } from './ProducerGroupView';
 import { useToast } from './ToastProvider';
 import { theme } from '../theme';
 import { calculateGrid } from '../utils/calculateGrid';
-import type { ChannelWithUsers, ProducerInfo, ProducerSource, User, WsEvents } from '../../../libs/api/entities';
+import type { ChannelWithUsers, ProducerInfo, ProducerSource, User, UserId, WsEvents } from '../../../libs/api/entities';
 import { sounds } from '../sounds';
 
 type ChannelViewProps = {
@@ -17,18 +17,21 @@ type ChannelViewProps = {
   channel: ChannelWithUsers;
   socket: Socket;
   onLeave: () => void;
+  onSpeakingChange: (userId: UserId, speaking: boolean) => void;
 };
 
 const groupProducers = (infos: ProducerInfo[], channelUsers: User[]): ProducerGroup[] => {
-  const userMap = new Map(channelUsers.map((u) => [u.id, u.nickname]));
+  const userMap = new Map(channelUsers.map((u) => [u.id, { nickname: u.nickname, avatarUrl: u.avatarUrl }]));
   const groups = new Map<string, ProducerGroup>();
   channelUsers.forEach((user) => {
-    groups.set(`${user.id}:user`, { userId: user.id, nickname: user.nickname, source: 'user' });
+    groups.set(`${user.id}:user`, { userId: user.id, nickname: user.nickname, avatarUrl: user.avatarUrl, source: 'user' });
   });
   for (const info of infos) {
     const key = `${info.userId}:${info.source}`;
-    const nickname = userMap.get(info.userId) ?? String(info.userId);
-    const group = groups.get(key) ?? { userId: info.userId, nickname, source: info.source };
+    const userData = userMap.get(info.userId);
+    const nickname = userData?.nickname ?? String(info.userId);
+    const avatarUrl = userData?.avatarUrl;
+    const group = groups.get(key) ?? { userId: info.userId, nickname, avatarUrl, source: info.source };
     group[info.kind] = info;
     groups.set(key, group);
   }
@@ -37,7 +40,7 @@ const groupProducers = (infos: ProducerInfo[], channelUsers: User[]): ProducerGr
   );
 };
 
-export function ChannelView({ user, socket, channel, onLeave }: ChannelViewProps) {
+export function ChannelView({ user, socket, channel, onLeave, onSpeakingChange }: ChannelViewProps) {
   const deviceRef = useRef<Device | null>(null);
   const [sendTransport, setSendTransport] = useState<Transport | null>(null);
   const [recvTransport, setRecvTransport] = useState<Transport | null>(null);
@@ -57,6 +60,13 @@ export function ChannelView({ user, socket, channel, onLeave }: ChannelViewProps
   channelIdRef.current = channel.id;
   const channelUsersRef = useRef(channel.users);
   channelUsersRef.current = channel.users;
+
+  const handleSpeakingChange = useCallback(
+    (userId: UserId, speaking: boolean) => {
+      onSpeakingChange(userId, speaking);
+    },
+    [onSpeakingChange],
+  );
 
   // Subscribe to channel-scoped WebSocket events
   useEffect(() => {
@@ -252,6 +262,7 @@ export function ChannelView({ user, socket, channel, onLeave }: ChannelViewProps
                   isDeafUser={channelUsersRef.current.some((u) => u.id === group.userId && u.isDeaf)}
                   speakerDeviceId={speakerDeviceId}
                   onLog={addLog}
+                  onSpeakingChange={handleSpeakingChange}
                 />
               </div>
             ))}

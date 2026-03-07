@@ -39,11 +39,11 @@ export class S3Service implements OnModuleInit {
     await this.client.send(new DeleteObjectCommand({ Bucket: bucket, Key: key }));
   }
 
-  async getPresignedUploadUrl({ bucket, key }: S3Path, contentType: string, expiresIn = 900): Promise<string> {
+  async getPresignedUploadUrl({ bucket, key }: S3Path, contentType: string, expiresIn: number): Promise<string> {
     return getSignedUrl(this.client, new PutObjectCommand({ Bucket: bucket, Key: key, ContentType: contentType }), { expiresIn });
   }
 
-  async getPresignedDownloadUrl({ bucket, key }: S3Path, expiresIn = 900): Promise<string> {
+  async getPresignedDownloadUrl({ bucket, key }: S3Path, expiresIn: number): Promise<string> {
     return getSignedUrl(this.client, new GetObjectCommand({ Bucket: bucket, Key: key }), { expiresIn });
   }
 

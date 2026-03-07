@@ -1,18 +1,21 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { io, type Socket } from 'socket.io-client';
 import { ChannelSidebar } from './components/ChannelSidebar';
 import { ChannelView } from './components/ChannelView';
 import { Login } from './components/Login';
+import { UserSettingsModal } from './components/UserSettingsModal';
 import { api } from './api';
 import { tokenStorage } from './storage';
 import { theme } from './theme';
-import type { ChannelId, ChannelWithUsers, User, WsEvents } from '../../libs/api/entities';
+import type { ChannelId, ChannelWithUsers, User, UserId, WsEvents } from '../../libs/api/entities';
 
 export function App() {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [channels, setChannels] = useState<ChannelWithUsers[]>([]);
   const [activeChannelId, setActiveChannelId] = useState<ChannelId | null>(null);
+  const [speakingUserIds, setSpeakingUserIds] = useState<Set<UserId>>(new Set());
+  const [showSettings, setShowSettings] = useState(false);
   const socketRef = useRef<Socket | null>(null);
 
   // Restore user from token on mount
@@ -81,11 +84,24 @@ export function App() {
       );
     };
 
+    const onUserUpdated = (data: WsEvents['userUpdated']) => {
+      // Update current user if it's us
+      setUser((prev) => (prev?.id === data.user.id ? { ...prev, ...data.user } : prev));
+      // Update avatarUrl for this user in all channels
+      setChannels((prev) =>
+        prev.map((ch) => ({
+          ...ch,
+          users: ch.users.map((u) => (u.id === data.user.id ? { ...u, avatarUrl: data.user.avatarUrl } : u)),
+        })),
+      );
+    };
+
     socket.on('channelCreated', onChannelCreated);
     socket.on('channelDeleted', onChannelDeleted);
     socket.on('channelUserJoined', onChannelUserJoined);
     socket.on('channelUserLeft', onChannelUserLeft);
     socket.on('channelUserStatusChanged', onChannelUserStatusChanged);
+    socket.on('userUpdated', onUserUpdated);
 
     return () => {
       socket.off('channelCreated', onChannelCreated);
@@ -93,10 +109,11 @@ export function App() {
       socket.off('channelUserJoined', onChannelUserJoined);
       socket.off('channelUserLeft', onChannelUserLeft);
       socket.off('channelUserStatusChanged', onChannelUserStatusChanged);
+      socket.off('userUpdated', onUserUpdated);
       socket.disconnect();
       socketRef.current = null;
     };
-  }, [user]);
+  }, [user?.id]);
 
   const refreshChannels = async () => {
     const { channels: list } = await api.Channels.listChannels({});
@@ -119,6 +136,7 @@ export function App() {
     if (!activeChannelId) return;
     await api.Channels.leaveChannel({ channelId: activeChannelId });
     setActiveChannelId(null);
+    setSpeakingUserIds(new Set());
   };
 
   const handleCreate = async (name: string) => {
@@ -128,6 +146,19 @@ export function App() {
   const handleDelete = async (channelId: ChannelId) => {
     if (activeChannelId === channelId) await handleLeave();
     await api.Channels.deleteChannel({ channelId });
+  };
+
+  const handleSpeakingChange = useCallback((userId: UserId, speaking: boolean) => {
+    setSpeakingUserIds((prev) => {
+      const next = new Set(prev);
+      if (speaking) next.add(userId);
+      else next.delete(userId);
+      return next;
+    });
+  }, []);
+
+  const handleAvatarUpdated = (updatedUser: User) => {
+    setUser((prev) => (prev ? { ...prev, ...updatedUser } : prev));
   };
 
   if (loading) {
@@ -151,10 +182,13 @@ export function App() {
       <ChannelSidebar
         channels={channels}
         activeChannelId={activeChannelId}
+        currentUser={user}
+        speakingUserIds={speakingUserIds}
         onJoin={handleJoin}
         onLeave={handleLeave}
         onCreate={handleCreate}
         onDelete={handleDelete}
+        onOpenSettings={() => setShowSettings(true)}
       />
       <div style={{ flex: 1, overflow: 'hidden' }}>
         {activeChannel && socket ? (
@@ -163,6 +197,7 @@ export function App() {
             channel={activeChannel}
             socket={socket}
             onLeave={handleLeave}
+            onSpeakingChange={handleSpeakingChange}
           />
         ) : (
           <div
@@ -175,6 +210,14 @@ export function App() {
           </div>
         )}
       </div>
+
+      {showSettings && (
+        <UserSettingsModal
+          user={user}
+          onClose={() => setShowSettings(false)}
+          onAvatarUpdated={handleAvatarUpdated}
+        />
+      )}
     </div>
   );
 }
