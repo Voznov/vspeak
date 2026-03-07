@@ -53,9 +53,11 @@ http {
             proxy_set_header Connection "upgrade";
         }
 
-        # S3/MinIO object storage — path must be forwarded verbatim so
-        # AWS presigned URL signatures (which include the path) remain valid
+        # S3/MinIO object storage — path and Host header must be forwarded
+        # verbatim so AWS presigned URL signatures remain valid.
+        # $http_host preserves the port (unlike $host which strips it).
         location /avatars/ {
+            proxy_set_header Host $http_host;
             proxy_pass http://minio;
         }
 
