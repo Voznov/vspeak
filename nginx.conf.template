@@ -53,9 +53,10 @@ http {
             proxy_set_header Connection "upgrade";
         }
 
-        # S3/MinIO object storage
-        location /s3/ {
-            proxy_pass http://minio/;
+        # S3/MinIO object storage — path must be forwarded verbatim so
+        # AWS presigned URL signatures (which include the path) remain valid
+        location /avatars/ {
+            proxy_pass http://minio;
         }
 
         # Everything else → web-client (static files)
