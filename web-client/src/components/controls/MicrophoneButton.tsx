@@ -27,6 +27,7 @@ export function MicrophoneButton({ sendTransport, onLog }: MicrophoneButtonProps
   const [selectedDeviceId, setSelectedDeviceId] = useStorageItemState(micDeviceStorage);
   const producerRef = useRef<Producer | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
+  const rawTrackRef = useRef<MediaStreamTrack | null>(null); // original getUserMedia track for instant mute
   const audioContextRef = useRef<AudioContext | null>(null);
   const sourceNodeRef = useRef<MediaStreamAudioSourceNode | null>(null);
   const noiseNodeRef = useRef<AudioWorkletNode | null>(null);
@@ -50,25 +51,45 @@ export function MicrophoneButton({ sendTransport, onLog }: MicrophoneButtonProps
     noiseNodeRef.current = null;
     sourceNodeRef.current = null;
     destNodeRef.current = null;
+    rawTrackRef.current = null;
     await audioContextRef.current?.close();
     audioContextRef.current = null;
     streamRef.current?.getTracks().forEach((t) => t.stop());
     streamRef.current = null;
   };
 
-  const stop = async (silent = false, preserveStorage = false) => {
+  // Closes server producer and tears down audio pipeline.
+  // Called on unmount or device switch, not on regular mute/unmute.
+  const fullStop = async () => {
     if (producerRef.current) {
       await api.Voice.closeProducer({ producerId: producerRef.current.id as ProducerId });
       producerRef.current.close();
       producerRef.current = null;
     }
     await teardownAudio();
+  };
+
+  // Disables the raw mic track so the pipeline sends silence.
+  const mute = (silent = false, preserveStorage = false) => {
+    if (rawTrackRef.current) rawTrackRef.current.enabled = false;
     if (!preserveStorage) micEnabledStorage.set(false);
     setActive(false);
     if (!silent) sounds.mute();
   };
 
-  const start = async (deviceId?: string, silent = false) => {
+  // Re-enables the raw mic track, or calls init() on first use.
+  const unmute = (deviceId?: string, silent = false) => {
+    if (rawTrackRef.current) {
+      rawTrackRef.current.enabled = true;
+      micEnabledStorage.set(true);
+      setActive(true);
+      if (!silent) sounds.unmute();
+    } else {
+      void init(deviceId, silent);
+    }
+  };
+
+  const init = async (deviceId?: string, silent = false) => {
     if (!sendTransport || sendTransport.closed) return;
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
@@ -81,12 +102,11 @@ export function MicrophoneButton({ sendTransport, onLog }: MicrophoneButtonProps
         },
       });
       streamRef.current = stream;
+      rawTrackRef.current = stream.getAudioTracks()[0];
 
       // Detect which device was actually used and refresh labels
-      const actualDeviceId = stream.getAudioTracks()[0].getSettings().deviceId;
-      if (actualDeviceId) {
-        setSelectedDeviceId(actualDeviceId);
-      }
+      const actualDeviceId = rawTrackRef.current.getSettings().deviceId;
+      if (actualDeviceId) setSelectedDeviceId(actualDeviceId);
       void loadDevices();
 
       // Route mic through RNNoise AudioWorklet for neural noise suppression.
@@ -115,7 +135,7 @@ export function MicrophoneButton({ sendTransport, onLog }: MicrophoneButtonProps
     }
   };
 
-  // Reconnect audio graph when noise setting changes (driven by UserSettingsModal via window event).
+  // Reconnect audio graph when noise setting changes
   useEffect(() => {
     const source = sourceNodeRef.current;
     const noiseNode = noiseNodeRef.current;
@@ -136,20 +156,18 @@ export function MicrophoneButton({ sendTransport, onLog }: MicrophoneButtonProps
   const selectDevice = async (deviceId: string) => {
     setSelectedDeviceId(deviceId);
     if (active) {
-      await stop(true);
-      await start(deviceId, true);
+      await fullStop();
+      await init(deviceId, true);
     }
   };
 
   // React to deaf state transitions: auto-mute on deafen, restore on undeafen
   useEffect(() => {
     if (!prevDeafRef.current && isDeaf) {
-      // Became deafened: save mic state and stop mic silently
       wasActiveBeforeDeafRef.current = active;
-      if (active) void stop(true, true);
+      if (active) mute(true, true);
     } else if (prevDeafRef.current && !isDeaf) {
-      // Became undeafened: restore mic to pre-deafen state
-      if (wasActiveBeforeDeafRef.current) void start(selectedDeviceId, true);
+      if (wasActiveBeforeDeafRef.current) unmute(selectedDeviceId, true);
       wasActiveBeforeDeafRef.current = false;
     }
     prevDeafRef.current = isDeaf;
@@ -161,7 +179,7 @@ export function MicrophoneButton({ sendTransport, onLog }: MicrophoneButtonProps
       if (isDeaf) {
         wasActiveBeforeDeafRef.current = true;
       } else {
-        void start(selectedDeviceId, true);
+        unmute(selectedDeviceId, true);
       }
     }
   }, [sendTransport]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -169,9 +187,7 @@ export function MicrophoneButton({ sendTransport, onLog }: MicrophoneButtonProps
   // Release mic track on unmount (channel switch or leave)
   useEffect(() => {
     return () => {
-      void teardownAudio();
-      producerRef.current?.close();
-      producerRef.current = null;
+      void fullStop();
     };
   }, []);
 
@@ -186,8 +202,8 @@ export function MicrophoneButton({ sendTransport, onLog }: MicrophoneButtonProps
               onUndeafen();
             }
           : active
-            ? () => void stop()
-            : () => void start(selectedDeviceId)
+            ? () => mute()
+            : () => unmute(selectedDeviceId)
       }
       disabled={!sendTransport}
       title={active ? 'Mute microphone' : 'Unmute microphone'}
