@@ -9,6 +9,7 @@ import { api } from '../api';
 import type { ProducerInfo, ProducerSource, UserId } from '../../../libs/api/entities';
 import { getUserColor } from '../utils/userColor';
 import { UserAvatar } from './UserAvatar';
+import { deafEnabledStorage, useStorageItemState } from '../storage';
 
 export type ProducerGroup = {
   userId: UserId;
@@ -24,7 +25,6 @@ type Props = {
   recvTransport: Transport | null;
   device: Device | null;
   isSelf: boolean;
-  isDeaf: boolean;
   isDeafUser: boolean;
   speakerDeviceId?: string;
   onLog: (entry: string) => void;
@@ -41,7 +41,6 @@ export function ProducerGroupView({
   recvTransport,
   device,
   isSelf,
-  isDeaf,
   isDeafUser,
   speakerDeviceId,
   onLog,
@@ -54,6 +53,7 @@ export function ProducerGroupView({
   const audioContextRef = useRef<AudioContext | null>(null);
   const rafRef = useRef<number | null>(null);
   const speakingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [isDeaf] = useStorageItemState(deafEnabledStorage);
   const [hasVideo, setHasVideo] = useState(false);
   const [hovered, setHovered] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);

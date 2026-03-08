@@ -46,7 +46,6 @@ export function ChannelView({ user, socket, channel, onLeave, onSpeakingChange }
   const [recvTransport, setRecvTransport] = useState<Transport | null>(null);
   const [producerInfos, setProducerInfos] = useState<ProducerInfo[]>([]);
   const [connecting, setConnecting] = useState(true);
-  const [isDeaf, setIsDeaf] = useState(() => deafEnabledStorage.get());
   const [speakerDeviceId, setSpeakerDeviceId] = useStorageItemState(speakerDeviceStorage);
 
   const sendTransportRef = useRef<Transport | null>(null);
@@ -258,7 +257,6 @@ export function ChannelView({ user, socket, channel, onLeave, onSpeakingChange }
                   recvTransport={recvTransport}
                   device={deviceRef.current}
                   isSelf={group.userId === user.id}
-                  isDeaf={isDeaf}
                   isDeafUser={channelUsersRef.current.some((u) => u.id === group.userId && u.isDeaf)}
                   speakerDeviceId={speakerDeviceId}
                   onLog={addLog}
@@ -292,8 +290,6 @@ export function ChannelView({ user, socket, channel, onLeave, onSpeakingChange }
         channelId={channel.id}
         sendTransport={sendTransport}
         connecting={connecting}
-        isDeaf={isDeaf}
-        onDeafToggle={setIsDeaf}
         onSpeakerChange={setSpeakerDeviceId}
         onLog={addLog}
         onLeave={() => {

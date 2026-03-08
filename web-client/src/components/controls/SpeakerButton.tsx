@@ -7,20 +7,19 @@ import { ControlButton } from './ControlButton';
 import { sounds } from '../../sounds';
 
 type SpeakerButtonProps = {
-  isDeaf: boolean;
-  onToggle: (isDeaf: boolean) => void;
   onSpeakerChange: (deviceId: string) => void;
 };
 
-export function SpeakerButton({ isDeaf, onToggle, onSpeakerChange }: SpeakerButtonProps) {
+export function SpeakerButton({ onSpeakerChange }: SpeakerButtonProps) {
   const [devices, setDevices] = useState<MediaDeviceInfo[]>([]);
+  const [isDeaf, setIsDeaf] = useStorageItemState(deafEnabledStorage);
   const [selectedDeviceId, setSelectedDeviceId] = useStorageItemState(speakerDeviceStorage);
 
   const toggle = async () => {
     const next = !isDeaf;
-    deafEnabledStorage.set(next);
-    onToggle(next);
-    if (next) sounds.deafen(); else sounds.undeafen();
+    setIsDeaf(next);
+    if (next) sounds.deafen();
+    else sounds.undeafen();
     await api.Voice.setDeaf({ isDeaf: next });
   };
 

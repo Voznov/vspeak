@@ -15,14 +15,12 @@ type ControlBarProps = {
   channelId: ChannelId;
   sendTransport: Transport | null;
   connecting: boolean;
-  isDeaf: boolean;
-  onDeafToggle: (isDeaf: boolean) => void;
   onSpeakerChange: (deviceId: string) => void;
   onLog: (entry: string) => void;
   onLeave: () => void;
 };
 
-export function ControlBar({ channelId, sendTransport, connecting, isDeaf, onDeafToggle, onSpeakerChange, onLog, onLeave }: ControlBarProps) {
+export function ControlBar({ channelId, sendTransport, connecting, onSpeakerChange, onLog, onLeave }: ControlBarProps) {
   return (
     <div
       key={channelId}
@@ -42,16 +40,9 @@ export function ControlBar({ channelId, sendTransport, connecting, isDeaf, onDea
         zIndex: 100,
       }}
     >
-      <SpeakerButton isDeaf={isDeaf} onToggle={onDeafToggle} onSpeakerChange={onSpeakerChange} />
+      <SpeakerButton onSpeakerChange={onSpeakerChange} />
       <MicrophoneButton
         sendTransport={sendTransport}
-        isDeaf={isDeaf}
-        onUndeafen={() => {
-          deafEnabledStorage.set(false);
-          onDeafToggle(false);
-          sounds.undeafen();
-          void api.Voice.setDeaf({ isDeaf: false });
-        }}
         onLog={onLog}
       />
       <CameraButton sendTransport={sendTransport} onLog={onLog} />

@@ -1,7 +1,13 @@
 import { useEffect, useRef, useState } from 'react';
 import type { Producer, Transport } from 'mediasoup-client/types';
 import { api } from '../../api';
-import { micDeviceStorage, micEnabledStorage, noiseCancelStorage, useStorageItemState } from '../../storage';
+import {
+  deafEnabledStorage,
+  micDeviceStorage,
+  micEnabledStorage,
+  noiseCancelStorage,
+  useStorageItemState,
+} from '../../storage';
 import type { ProducerId } from '../../../../libs/api/entities';
 import MicIcon from '../../assets/mic.svg?react';
 import MicOffIcon from '../../assets/mic-off.svg?react';
@@ -10,14 +16,13 @@ import { sounds } from '../../sounds';
 
 type MicrophoneButtonProps = {
   sendTransport: Transport | null;
-  isDeaf: boolean;
-  onUndeafen: () => void;
   onLog: (entry: string) => void;
 };
 
-export function MicrophoneButton({ sendTransport, isDeaf, onUndeafen, onLog }: MicrophoneButtonProps) {
+export function MicrophoneButton({ sendTransport, onLog }: MicrophoneButtonProps) {
   const [active, setActive] = useState(false);
   const [noiseEnabled, setNoiseEnabled] = useStorageItemState(noiseCancelStorage);
+  const [isDeaf, setIsDeaf] = useStorageItemState(deafEnabledStorage);
   const [devices, setDevices] = useState<MediaDeviceInfo[]>([]);
   const [selectedDeviceId, setSelectedDeviceId] = useStorageItemState(micDeviceStorage);
   const producerRef = useRef<Producer | null>(null);
@@ -32,6 +37,12 @@ export function MicrophoneButton({ sendTransport, isDeaf, onUndeafen, onLog }: M
   const loadDevices = async () => {
     const all = await navigator.mediaDevices.enumerateDevices();
     setDevices(all.filter((d) => d.kind === 'audioinput'));
+  };
+
+  const onUndeafen = () => {
+    setIsDeaf(false);
+    sounds.undeafen();
+    void api.Voice.setDeaf({ isDeaf: false });
   };
 
   const teardownAudio = async () => {
@@ -168,9 +179,16 @@ export function MicrophoneButton({ sendTransport, isDeaf, onUndeafen, onLog }: M
     <ControlButton
       icon={active ? <MicIcon width={20} height={20} /> : <MicOffIcon width={20} height={20} />}
       variant={active ? 'green' : 'default'}
-      onClick={isDeaf
-        ? () => { wasActiveBeforeDeafRef.current = true; onUndeafen(); }
-        : active ? () => void stop() : () => void start(selectedDeviceId)}
+      onClick={
+        isDeaf
+          ? () => {
+              wasActiveBeforeDeafRef.current = true;
+              onUndeafen();
+            }
+          : active
+            ? () => void stop()
+            : () => void start(selectedDeviceId)
+      }
       disabled={!sendTransport}
       title={active ? 'Mute microphone' : 'Unmute microphone'}
       picker={{
