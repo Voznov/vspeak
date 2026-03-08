@@ -36,14 +36,22 @@ export function UserSettingsModal({ user, onClose }: Props) {
   const [crop, setCrop] = useState<CropState>({ offsetX: 0, offsetY: 0, scale: 1 });
   const [naturalSize, setNaturalSize] = useState({ w: 0, h: 0 });
   const [uploading, setUploading] = useState(false);
+  const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [avatarHovered, setAvatarHovered] = useState(false);
   const [noiseEnabled, setNoiseEnabled] = useStorageItemState(noiseCancelStorage);
+  const [nickname, setNickname] = useState(user.nickname);
+  const [selectedColor, setSelectedColor] = useState(user.bgColor);
+  const [palette, setPalette] = useState<string[]>([]);
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const previewImgRef = useRef<HTMLImageElement | null>(null);
   const dragRef = useRef<{ startX: number; startY: number; startOx: number; startOy: number } | null>(null);
+
+  useEffect(() => {
+    void api.User.getPalette({}).then(({ colors }) => setPalette(colors));
+  }, []);
 
   const loadImage = (src: string) => {
     const img = new Image();
@@ -145,6 +153,26 @@ export function UserSettingsModal({ user, onClose }: Props) {
     setNoiseEnabled(!noiseEnabled);
   };
 
+  const handleSaveProfile = async () => {
+    const trimmed = nickname.trim();
+    const nicknameChanged = trimmed !== user.nickname && trimmed.length > 0;
+    const colorChanged = selectedColor !== user.bgColor;
+    if (!nicknameChanged && !colorChanged) return;
+
+    setError(null);
+    setSaving(true);
+    try {
+      await api.User.updateUser({
+        nickname: nicknameChanged ? trimmed : undefined,
+        bgColor: colorChanged ? selectedColor : undefined,
+      });
+    } catch (err) {
+      setError(String(err));
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const handleUpload = async () => {
     setError(null);
     setUploading(true);
@@ -167,6 +195,8 @@ export function UserSettingsModal({ user, onClose }: Props) {
       setUploading(false);
     }
   };
+
+  const profileChanged = (nickname.trim() !== user.nickname && nickname.trim().length > 0) || selectedColor !== user.bgColor;
 
   return (
     <div
@@ -205,7 +235,7 @@ export function UserSettingsModal({ user, onClose }: Props) {
             onMouseEnter={() => setAvatarHovered(true)}
             onMouseLeave={() => setAvatarHovered(false)}
           >
-            <UserAvatar userId={user.id} nickname={user.nickname} avatarUrl={user.avatarUrl} size={48} />
+            <UserAvatar nickname={user.nickname} bgColor={selectedColor} avatarUrl={user.avatarUrl} size={48} />
             {avatarHovered && (
               <div
                 style={{
@@ -232,11 +262,52 @@ export function UserSettingsModal({ user, onClose }: Props) {
               style={{ display: 'none' }}
             />
           </div>
-          <div>
-            <div style={{ fontWeight: 600, fontSize: '14px' }}>{user.nickname}</div>
-            <div style={{ fontSize: '12px', color: theme.text.secondary }}>{user.role}</div>
+          <div style={{ flex: 1 }}>
+            <input
+              type="text"
+              value={nickname}
+              onChange={(e) => setNickname(e.target.value)}
+              maxLength={64}
+              style={{
+                width: '100%',
+                padding: '6px 8px',
+                fontSize: '14px',
+                fontWeight: 600,
+                border: `1px solid ${theme.border.input}`,
+                borderRadius: '6px',
+                background: theme.bg.tertiary,
+                color: theme.text.primary,
+                outline: 'none',
+                boxSizing: 'border-box',
+              }}
+            />
+            <div style={{ fontSize: '12px', color: theme.text.secondary, marginTop: '2px' }}>{user.role}</div>
           </div>
         </div>
+
+        {/* Color palette */}
+        {palette.length > 0 && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            <div style={{ fontWeight: 600, fontSize: '13px', color: theme.text.heading }}>COLOR</div>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+              {palette.map((color) => (
+                <div
+                  key={color}
+                  onClick={() => setSelectedColor(color)}
+                  style={{
+                    width: '24px',
+                    height: '24px',
+                    borderRadius: '50%',
+                    background: color,
+                    cursor: 'pointer',
+                    boxShadow: selectedColor === color ? `0 0 0 2px white, 0 0 0 3px ${color}` : 'none',
+                    flexShrink: 0,
+                  }}
+                />
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Crop canvas */}
         {imageSrc && (
@@ -311,7 +382,7 @@ export function UserSettingsModal({ user, onClose }: Props) {
         <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
           <button
             onClick={onClose}
-            disabled={uploading}
+            disabled={uploading || saving}
             style={{
               padding: '7px 16px',
               fontSize: '13px',
@@ -324,6 +395,24 @@ export function UserSettingsModal({ user, onClose }: Props) {
           >
             Close
           </button>
+          {profileChanged && (
+            <button
+              onClick={() => void handleSaveProfile()}
+              disabled={saving}
+              style={{
+                padding: '7px 16px',
+                fontSize: '13px',
+                borderRadius: '6px',
+                border: 'none',
+                background: theme.accent.primary,
+                color: theme.text.onAccent,
+                cursor: saving ? 'default' : 'pointer',
+                opacity: saving ? 0.6 : 1,
+              }}
+            >
+              {saving ? 'Saving…' : 'Save'}
+            </button>
+          )}
           {imageSrc && (
             <button
               onClick={() => void handleUpload()}

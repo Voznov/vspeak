@@ -8,6 +8,7 @@ export type User = {
   id: UserId;
   nickname: string;
   role: UserRole;
+  bgColor: string;
   avatarUrl?: string;
 };
 
@@ -316,6 +317,30 @@ export type UpdateAvatarResponse = {
   uploadUrl: string;
 };
 
+export type UpdateUserRequest = {
+  nickname?: string;
+  bgColor?: string;
+};
+
+export type UpdateUserResponse = {
+  user: User;
+};
+
+export type GetPaletteRequest = {};
+
+export type GetPaletteResponse = {
+  colors: string[];
+};
+
+export type UpdateChannelRequest = {
+  channelId: ChannelId;
+  name: string;
+};
+
+export type UpdateChannelResponse = {
+  channel: Channel;
+};
+
 // WebSocket event types
 export type WsEvents = {
   channelUserJoined: { channelId: ChannelId; user: UserWithStatus };
@@ -324,6 +349,7 @@ export type WsEvents = {
   producerCreated: { info: ProducerInfo };
   producerClosed: { producerId: ProducerId; userId: UserId };
   channelCreated: { channel: ChannelWithUsers };
+  channelUpdated: { channel: Channel };
   userUpdated: { user: User };
   channelDeleted: { channelId: ChannelId };
 };

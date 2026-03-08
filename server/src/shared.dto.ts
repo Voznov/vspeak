@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { UserEntity } from './user/user.entity';
 import type { ChannelId, ConsumerId, ProducerId, TransportId, UserId } from '../../libs/api/entities';
 import { ZodDto } from '../libs/validation';
 
@@ -7,26 +8,27 @@ export const zChannelId = z.string().transform((v) => v as ChannelId);
 export const zTransportId = z.string().transform((v) => v as TransportId);
 export const zProducerId = z.string().transform((v) => v as ProducerId);
 export const zConsumerId = z.string().transform((v) => v as ConsumerId);
+export { zBgColor } from './user/palette';
 
 export class UserDto extends ZodDto(
-  z.object({
-    id: zUserId,
-    nickname: z.string(),
-    role: z.enum(['user', 'admin']),
+  UserEntity.omit({ createdAt: true }).extend({
     avatarUrl: z.string().optional(),
   }),
 ) {}
 
 export class UserWithStatusDto extends ZodDto(
-  z.object({
-    id: zUserId,
-    nickname: z.string(),
-    role: z.enum(['user', 'admin']),
-    avatarUrl: z.string().optional(),
+  UserDto.extend({
     hasMic: z.boolean(),
     hasVideo: z.boolean(),
     hasScreen: z.boolean(),
     isDeaf: z.boolean(),
+  }),
+) {}
+
+export class ChannelDto extends ZodDto(
+  z.object({
+    id: zChannelId,
+    name: z.string(),
   }),
 ) {}
 

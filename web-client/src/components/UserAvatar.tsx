@@ -1,17 +1,16 @@
 import { useState } from 'react';
 import type { CSSProperties } from 'react';
-import { getUserColor } from '../utils/userColor';
 
 type Props = {
-  userId: string;
   nickname: string;
+  bgColor: string;
   avatarUrl?: string;
   size: number;
   isSpeaking?: boolean;
   style?: CSSProperties;
 };
 
-export function UserAvatar({ userId, nickname, avatarUrl, size, isSpeaking, style }: Props) {
+export function UserAvatar({ nickname, bgColor, avatarUrl, size, isSpeaking, style }: Props) {
   const [imgFailed, setImgFailed] = useState(false);
   const showImg = !!avatarUrl && !imgFailed;
 
@@ -23,7 +22,7 @@ export function UserAvatar({ userId, nickname, avatarUrl, size, isSpeaking, styl
         borderRadius: '50%',
         flexShrink: 0,
         overflow: 'hidden',
-        background: showImg ? 'transparent' : getUserColor(userId),
+        background: showImg ? 'transparent' : bgColor,
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',

@@ -84,20 +84,23 @@ export function App() {
       );
     };
 
+    const onChannelUpdated = (data: WsEvents['channelUpdated']) => {
+      setChannels((prev) => prev.map((ch) => (ch.id === data.channel.id ? { ...ch, ...data.channel } : ch)));
+    };
+
     const onUserUpdated = (data: WsEvents['userUpdated']) => {
-      // Update current user if it's us
       setUser((prev) => (prev?.id === data.user.id ? { ...prev, ...data.user } : prev));
-      // Update avatarUrl for this user in all channels
       setChannels((prev) =>
         prev.map((ch) => ({
           ...ch,
-          users: ch.users.map((u) => (u.id === data.user.id ? { ...u, avatarUrl: data.user.avatarUrl } : u)),
+          users: ch.users.map((u) => (u.id === data.user.id ? { ...u, ...data.user } : u)),
         })),
       );
     };
 
     socket.on('channelCreated', onChannelCreated);
     socket.on('channelDeleted', onChannelDeleted);
+    socket.on('channelUpdated', onChannelUpdated);
     socket.on('channelUserJoined', onChannelUserJoined);
     socket.on('channelUserLeft', onChannelUserLeft);
     socket.on('channelUserStatusChanged', onChannelUserStatusChanged);
@@ -106,6 +109,7 @@ export function App() {
     return () => {
       socket.off('channelCreated', onChannelCreated);
       socket.off('channelDeleted', onChannelDeleted);
+      socket.off('channelUpdated', onChannelUpdated);
       socket.off('channelUserJoined', onChannelUserJoined);
       socket.off('channelUserLeft', onChannelUserLeft);
       socket.off('channelUserStatusChanged', onChannelUserStatusChanged);
@@ -141,6 +145,10 @@ export function App() {
 
   const handleCreate = async (name: string) => {
     await api.Channels.createChannel({ name });
+  };
+
+  const handleRename = async (channelId: ChannelId, name: string) => {
+    await api.Channels.updateChannel({ channelId, name });
   };
 
   const handleDelete = async (channelId: ChannelId) => {
@@ -183,6 +191,7 @@ export function App() {
         onJoin={handleJoin}
         onLeave={handleLeave}
         onCreate={handleCreate}
+        onRename={handleRename}
         onDelete={handleDelete}
         onOpenSettings={() => setShowSettings(true)}
       />

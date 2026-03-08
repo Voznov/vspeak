@@ -29,4 +29,16 @@ export class ChannelsRepo {
 
     return rows[0] ? toDto(ChannelEntity, rows[0]) : undefined;
   }
+
+  async getChannelByName(name: string): Promise<ChannelEntity | undefined> {
+    const { rows } = await this.pg.query('SELECT * FROM channels WHERE name = $1', [name]);
+
+    return rows[0] ? toDto(ChannelEntity, rows[0]) : undefined;
+  }
+
+  async updateChannel(channelId: ChannelId, name: string): Promise<ChannelEntity> {
+    const { rows } = await this.pg.query('UPDATE channels SET name = $1 WHERE id = $2 RETURNING *', [name, channelId]);
+
+    return toDto(ChannelEntity, rows[0]);
+  }
 }

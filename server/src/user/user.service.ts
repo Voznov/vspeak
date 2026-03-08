@@ -1,4 +1,5 @@
-import { Injectable, Logger, type OnModuleInit } from '@nestjs/common';
+import { HttpException, HttpStatus, Injectable, Logger, type OnModuleInit } from '@nestjs/common';
+import { UserEntity } from './user.entity';
 import { UserRepo } from './user.repo';
 import type { User, UserId, UserRole } from '../../../libs/api/entities';
 import { S3Bucket } from '../s3/s3.constants';
@@ -28,11 +29,11 @@ export class UserService implements OnModuleInit {
     });
   }
 
-  async createUser(nickname: string, role: UserRole): Promise<User> {
+  async createUser(nickname: string, role: UserRole): Promise<UserEntity> {
     return this.repo.createUser(nickname, role);
   }
 
-  async getUser(userId: UserId): Promise<User | undefined> {
+  async getUser(userId: UserId): Promise<UserEntity | undefined> {
     const user = await this.repo.getUserById(userId);
     if (!user) return undefined;
 
@@ -43,7 +44,22 @@ export class UserService implements OnModuleInit {
     return this.repo.getUserByNickname(nickname);
   }
 
-  async appendAvatarUrl<T extends User>(user: T): Promise<T> {
+  async updateUser(userId: UserId, fields: { nickname?: string; bgColor?: string }): Promise<UserEntity> {
+    if (fields.nickname !== undefined) {
+      const existing = await this.repo.getUserByNickname(fields.nickname);
+      if (existing && existing.id !== userId) {
+        throw new HttpException('Nickname already taken', HttpStatus.CONFLICT);
+      }
+    }
+
+    const updated = await this.repo.updateUser(userId, fields);
+    const user = await this.appendAvatarUrl(updated);
+    this.ws.emitToAll('userUpdated', { user });
+
+    return user;
+  }
+
+  async appendAvatarUrl<T extends User>(user: T): Promise<T & { avatarUrl?: string }> {
     const avatarUrl = await this.s3.getPresignedDownloadUrl({ bucket: S3Bucket.Avatars, key: user.id }, AVATAR_URL_TTL);
 
     return { ...user, avatarUrl };

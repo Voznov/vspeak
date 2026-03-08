@@ -1,6 +1,7 @@
 import { HttpException, HttpStatus, Injectable, type OnModuleInit } from '@nestjs/common';
 import { ChannelsRepo } from './channels.repo';
-import type { ChannelId, ChannelWithUsers, UserId, UserWithStatus } from '../../../libs/api/entities';
+import type { ChannelId, UserId } from '../../../libs/api/entities';
+import { ChannelWithUsersDto, UserWithStatusDto } from '../shared.dto';
 import { UserService } from '../user/user.service';
 import { WebRTCService } from '../webrtc/webrtc.service';
 import { WsGateway } from '../ws/ws.gateway';
@@ -36,13 +37,30 @@ export class ChannelsService implements OnModuleInit {
     });
   }
 
-  async createChannel(name: string): Promise<ChannelWithUsers> {
+  async updateChannel(channelId: ChannelId, name: string): Promise<{ id: ChannelId; name: string }> {
+    if (!this.runtime.has(channelId)) {
+      throw new HttpException('Channel not found', HttpStatus.NOT_FOUND);
+    }
+
+    const existing = await this.repo.getChannelByName(name);
+    if (existing && existing.id !== channelId) {
+      throw new HttpException('Channel name already taken', HttpStatus.CONFLICT);
+    }
+
+    const entity = await this.repo.updateChannel(channelId, name);
+    const channel = { id: entity.id, name: entity.name };
+    this.wsGateway.emitToAll('channelUpdated', { channel });
+
+    return channel;
+  }
+
+  async createChannel(name: string): Promise<ChannelWithUsersDto> {
     const entity = await this.repo.createChannel(name);
 
     await this.webrtcService.createChannelRouter(entity.id);
     this.runtime.set(entity.id, { userIds: new Set() });
 
-    const channel: ChannelWithUsers = { id: entity.id, name: entity.name, users: [] };
+    const channel: ChannelWithUsersDto = { id: entity.id, name: entity.name, users: [] };
     this.wsGateway.emitToAll('channelCreated', { channel });
 
     return channel;
@@ -65,7 +83,7 @@ export class ChannelsService implements OnModuleInit {
     this.wsGateway.emitToAll('channelDeleted', { channelId });
   }
 
-  async listChannels(): Promise<ChannelWithUsers[]> {
+  async listChannels(): Promise<ChannelWithUsersDto[]> {
     const channels = await this.repo.listChannels();
 
     return Promise.all(
@@ -146,7 +164,7 @@ export class ChannelsService implements OnModuleInit {
     return undefined;
   }
 
-  async getChannelUsers(channelId: ChannelId): Promise<UserWithStatus[]> {
+  async getChannelUsers(channelId: ChannelId): Promise<UserWithStatusDto[]> {
     const rt = this.runtime.get(channelId);
     if (!rt) {
       return [];

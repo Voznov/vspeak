@@ -1,5 +1,6 @@
-import { HttpException, HttpStatus, UseGuards } from '@nestjs/common';
-import { GetMeResponseDto, UpdateAvatarResponseDto } from './user.dto';
+import { Body, HttpException, HttpStatus, UseGuards } from '@nestjs/common';
+import { PALETTE } from './palette';
+import { GetMeResponseDto, GetPaletteResponseDto, UpdateAvatarResponseDto, UpdateUserRequestDto, UpdateUserResponseDto } from './user.dto';
 import { UserService } from './user.service';
 import { Api } from '../../../libs/api';
 import { getUserId } from '../auth/cls.helper';
@@ -31,5 +32,18 @@ export class UserController extends Api.User {
     const uploadUrl = await this.userService.getAvatarUploadUrl(userId);
 
     return { uploadUrl };
+  }
+
+  @Rest({ response: UpdateUserResponseDto })
+  async updateUser(@Body() request: UpdateUserRequestDto): Promise<UpdateUserResponseDto> {
+    const userId = getUserId();
+    const user = await this.userService.updateUser(userId, { nickname: request.nickname, bgColor: request.bgColor });
+
+    return { user };
+  }
+
+  @Rest({ response: GetPaletteResponseDto })
+  async getPalette(): Promise<GetPaletteResponseDto> {
+    return { colors: [...PALETTE] };
   }
 }

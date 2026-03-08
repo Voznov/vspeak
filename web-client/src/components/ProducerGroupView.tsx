@@ -7,13 +7,13 @@ import { theme } from '../theme';
 import type { Transport } from 'mediasoup-client/types';
 import { api } from '../api';
 import type { ProducerInfo, ProducerSource, UserId } from '../../../libs/api/entities';
-import { getUserColor } from '../utils/userColor';
 import { UserAvatar } from './UserAvatar';
 import { deafEnabledStorage, useStorageItemState } from '../storage';
 
 export type ProducerGroup = {
   userId: UserId;
   nickname: string;
+  bgColor: string;
   avatarUrl?: string;
   source: ProducerSource;
   audio?: ProducerInfo;
@@ -207,7 +207,7 @@ export function ProducerGroupView({
           position: 'relative',
           width: 'min(100cqw, calc(100cqh * 16 / 9))',
           aspectRatio: '16 / 9',
-          background: hasVideo ? theme.bg.video : getUserColor(group.userId),
+          background: hasVideo ? theme.bg.video : group.bgColor,
           borderRadius: '8px',
           overflow: 'hidden',
           boxShadow: isSpeaking ? '0 0 0 2px white' : 'none',
@@ -243,8 +243,8 @@ export function ProducerGroupView({
             }}
           >
             <UserAvatar
-              userId={group.userId}
               nickname={group.nickname}
+              bgColor={group.bgColor}
               avatarUrl={group.avatarUrl}
               size={72}
             />

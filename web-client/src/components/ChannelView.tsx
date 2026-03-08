@@ -21,17 +21,18 @@ type ChannelViewProps = {
 };
 
 const groupProducers = (infos: ProducerInfo[], channelUsers: User[]): ProducerGroup[] => {
-  const userMap = new Map(channelUsers.map((u) => [u.id, { nickname: u.nickname, avatarUrl: u.avatarUrl }]));
+  const userMap = new Map(channelUsers.map((u) => [u.id, { nickname: u.nickname, bgColor: u.bgColor, avatarUrl: u.avatarUrl }]));
   const groups = new Map<string, ProducerGroup>();
   channelUsers.forEach((user) => {
-    groups.set(`${user.id}:user`, { userId: user.id, nickname: user.nickname, avatarUrl: user.avatarUrl, source: 'user' });
+    groups.set(`${user.id}:user`, { userId: user.id, nickname: user.nickname, bgColor: user.bgColor, avatarUrl: user.avatarUrl, source: 'user' });
   });
   for (const info of infos) {
     const key = `${info.userId}:${info.source}`;
     const userData = userMap.get(info.userId);
     const nickname = userData?.nickname ?? String(info.userId);
+    const bgColor = userData?.bgColor ?? '#78909C';
     const avatarUrl = userData?.avatarUrl;
-    const group = groups.get(key) ?? { userId: info.userId, nickname, avatarUrl, source: info.source };
+    const group = groups.get(key) ?? { userId: info.userId, nickname, bgColor, avatarUrl, source: info.source };
     group[info.kind] = info;
     groups.set(key, group);
   }

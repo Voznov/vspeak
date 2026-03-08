@@ -11,6 +11,8 @@ import {
   LeaveChannelRequestDto,
   LeaveChannelResponseDto,
   ListChannelsResponseDto,
+  UpdateChannelRequestDto,
+  UpdateChannelResponseDto,
 } from './channels.dto';
 import { ChannelsService } from './channels.service';
 import { Api } from '../../../libs/api';
@@ -60,6 +62,13 @@ export class ChannelsController extends Api.Channels {
     await this.channelsService.leaveChannel(userId, request.channelId);
 
     return { success: true };
+  }
+
+  @Rest({ response: UpdateChannelResponseDto })
+  async updateChannel(@Body() request: UpdateChannelRequestDto): Promise<UpdateChannelResponseDto> {
+    const channel = await this.channelsService.updateChannel(request.channelId, request.name);
+
+    return { channel };
   }
 
   @Rest({ response: GetChannelUsersResponseDto })

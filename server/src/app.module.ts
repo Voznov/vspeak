@@ -3,20 +3,14 @@ import { AuthModule } from './auth/auth.module';
 import { ClsMiddleware } from './auth/cls.middleware';
 import { ChannelsModule } from './channels/channels.module';
 import { ENV } from './env';
-import { CreateChannels20260306002 } from './postgres/migrations/CreateChannels20260306002';
-import { CreateUsers20260306001 } from './postgres/migrations/CreateUsers20260306001';
+import * as migrations from './postgres/migrations';
 import { PostgresModule } from './postgres/postgres.module';
 import { S3Module } from './s3/s3.module';
 import { UserModule } from './user/user.module';
 
 @Module({
   imports: [
-    PostgresModule.register({
-      migrations: {
-        CreateUsers20260306001,
-        CreateChannels20260306002,
-      },
-    }),
+    PostgresModule.register({ migrations }),
     S3Module.register({
       region: ENV.S3_REGION,
       endpoint: ENV.S3_ENDPOINT,
