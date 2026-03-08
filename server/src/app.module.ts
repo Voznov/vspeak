@@ -24,6 +24,7 @@ import { UserModule } from './user/user.module';
       forcePathStyle: ENV.S3_FORCE_PATH_STYLE,
       accessKeyId: ENV.S3_ACCESS_KEY_ID,
       secretAccessKey: ENV.S3_SECRET_ACCESS_KEY,
+      webhookAuthToken: ENV.S3_WEBHOOK_AUTH_TOKEN,
     }),
     AuthModule,
     UserModule,

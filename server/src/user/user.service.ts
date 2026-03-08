@@ -1,18 +1,32 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger, type OnModuleInit } from '@nestjs/common';
 import { UserRepo } from './user.repo';
 import type { User, UserId, UserRole } from '../../../libs/api/entities';
 import { S3Bucket } from '../s3/s3.constants';
 import { S3Service } from '../s3/s3.service';
+import { WsGateway } from '../ws/ws.gateway';
 
-// Presigned avatar URLs are valid for 24 hours
 const AVATAR_URL_TTL = 86400;
 
 @Injectable()
-export class UserService {
+export class UserService implements OnModuleInit {
+  private readonly logger = new Logger(UserService.name);
+
   constructor(
     private readonly repo: UserRepo,
     private readonly s3: S3Service,
+    private readonly ws: WsGateway,
   ) {}
+
+  onModuleInit(): void {
+    this.s3.onEvent(S3Bucket.Avatars, async (event) => {
+      const userId = event.key as UserId;
+      const user = await this.getUser(userId);
+      if (!user) return;
+
+      this.ws.emitToAll('userUpdated', { user });
+      this.logger.log(`Avatar uploaded for user ${userId}`);
+    });
+  }
 
   async createUser(nickname: string, role: UserRole): Promise<User> {
     return this.repo.createUser(nickname, role);

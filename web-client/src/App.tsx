@@ -157,10 +157,6 @@ export function App() {
     });
   }, []);
 
-  const handleAvatarUpdated = (updatedUser: User) => {
-    setUser((prev) => (prev ? { ...prev, ...updatedUser } : prev));
-  };
-
   if (loading) {
     return (
       <div style={{ padding: '20px', textAlign: 'center' }}>
@@ -215,7 +211,6 @@ export function App() {
         <UserSettingsModal
           user={user}
           onClose={() => setShowSettings(false)}
-          onAvatarUpdated={handleAvatarUpdated}
         />
       )}
     </div>

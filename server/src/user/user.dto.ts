@@ -13,9 +13,3 @@ export class UpdateAvatarResponseDto extends ZodDto(
     uploadUrl: z.string(),
   }),
 ) {}
-
-export class ConfirmAvatarUploadResponseDto extends ZodDto(
-  z.object({
-    user: UserDto,
-  }),
-) {}

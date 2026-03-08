@@ -7,7 +7,6 @@ import { UserAvatar } from './UserAvatar';
 type Props = {
   user: User;
   onClose: () => void;
-  onAvatarUpdated: (updatedUser: User) => void;
 };
 
 type CropState = {
@@ -31,7 +30,7 @@ const clampCrop = (crop: CropState, nw: number, nh: number): CropState => {
   };
 };
 
-export function UserSettingsModal({ user, onClose, onAvatarUpdated }: Props) {
+export function UserSettingsModal({ user, onClose }: Props) {
   const [imageSrc, setImageSrc] = useState<string | null>(null);
   const [crop, setCrop] = useState<CropState>({ offsetX: 0, offsetY: 0, scale: 1 });
   const [naturalSize, setNaturalSize] = useState({ w: 0, h: 0 });
@@ -155,9 +154,6 @@ export function UserSettingsModal({ user, onClose, onAvatarUpdated }: Props) {
 
       if (!res.ok) throw new Error(`Upload failed: ${res.status}`);
 
-      // Confirm upload — server broadcasts userUpdated to all clients
-      const { user: updatedUser } = await api.User.confirmAvatarUpload({});
-      onAvatarUpdated(updatedUser);
       onClose();
     } catch (err) {
       setError(String(err));

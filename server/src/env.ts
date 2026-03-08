@@ -25,6 +25,7 @@ const envSchema = z.object({
   S3_FORCE_PATH_STYLE: zBooleanFromString.default(false),
   S3_ACCESS_KEY_ID: z.string(),
   S3_SECRET_ACCESS_KEY: z.string(),
+  S3_WEBHOOK_AUTH_TOKEN: z.string().optional(),
 });
 
 const parsedEnv = envSchema.parse(process.env);

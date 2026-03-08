@@ -316,12 +316,6 @@ export type UpdateAvatarResponse = {
   uploadUrl: string;
 };
 
-export type ConfirmAvatarUploadRequest = {};
-
-export type ConfirmAvatarUploadResponse = {
-  user: User;
-};
-
 // WebSocket event types
 export type WsEvents = {
   channelUserJoined: { channelId: ChannelId; user: UserWithStatus };

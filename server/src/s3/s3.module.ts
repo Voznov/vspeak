@@ -1,5 +1,6 @@
 import { type DynamicModule, Module } from '@nestjs/common';
 import { S3_CONFIG } from './s3.constants';
+import { S3WebhookController } from './s3.controller';
 import { S3Service } from './s3.service';
 import { type S3Config } from './s3.types';
 
@@ -8,6 +9,7 @@ export class S3Module {
   static register(config: S3Config): DynamicModule {
     return {
       module: S3Module,
+      controllers: [S3WebhookController],
       providers: [{ provide: S3_CONFIG, useValue: config }],
       global: true,
     };

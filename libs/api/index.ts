@@ -3,8 +3,6 @@ import {
   type AdminLoginResponse,
   type CloseProducerRequest,
   type CloseProducerResponse,
-  type ConfirmAvatarUploadRequest,
-  type ConfirmAvatarUploadResponse,
   type ConnectTransportRequest,
   type ConnectTransportResponse,
   type ConsumeStreamRequest,
@@ -48,7 +46,6 @@ abstract class Auth {
 abstract class User {
   abstract getMe(_: GetMeRequest): Promise<GetMeResponse>;
   abstract updateAvatar(_: UpdateAvatarRequest): Promise<UpdateAvatarResponse>;
-  abstract confirmAvatarUpload(_: ConfirmAvatarUploadRequest): Promise<ConfirmAvatarUploadResponse>;
 }
 
 abstract class Channels {
