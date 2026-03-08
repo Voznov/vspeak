@@ -7,7 +7,7 @@ import tsEslint from 'typescript-eslint';
 
 export default [
   {
-    ignores: ['eslint.config.{js,cjs,mjs}', '**/dist', '.git', '.gitignore', 'tmp', '.tmp', '**/node_modules', '**/*.md', '**/vite.config.ts'],
+    ignores: ['eslint.config.{js,cjs,mjs}', '**/dist', '.git', '.gitignore', 'tmp', '.tmp', '**/node_modules', '**/*.md', '**/vite.config.ts', '**/public/*.js'],
   },
   eslintPluginImportX.flatConfigs.recommended,
   eslintPluginImportX.flatConfigs.typescript,

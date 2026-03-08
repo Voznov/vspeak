@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import type { Producer, Transport } from 'mediasoup-client/types';
 import { api } from '../../api';
-import { cameraDeviceStorage } from '../../storage';
+import { useStorageItemState, cameraDeviceStorage } from '../../storage';
 import type { ProducerId } from '../../../../libs/api/entities';
 import VideoIcon from '../../assets/video.svg?react';
 import VideoOffIcon from '../../assets/video-off.svg?react';
@@ -16,7 +16,7 @@ type CameraButtonProps = {
 export function CameraButton({ sendTransport, onLog }: CameraButtonProps) {
   const [active, setActive] = useState(false);
   const [devices, setDevices] = useState<MediaDeviceInfo[]>([]);
-  const [selectedDeviceId, setSelectedDeviceId] = useState<string | undefined>(cameraDeviceStorage.get);
+  const [selectedDeviceId, setSelectedDeviceId] = useStorageItemState(cameraDeviceStorage);
   const producerRef = useRef<Producer | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
 
@@ -55,7 +55,6 @@ export function CameraButton({ sendTransport, onLog }: CameraButtonProps) {
       const actualDeviceId = videoTrack.getSettings().deviceId;
       if (actualDeviceId) {
         setSelectedDeviceId(actualDeviceId);
-        cameraDeviceStorage.set(actualDeviceId);
       }
       void loadDevices();
 
@@ -74,7 +73,6 @@ export function CameraButton({ sendTransport, onLog }: CameraButtonProps) {
 
   const selectDevice = async (deviceId: string) => {
     setSelectedDeviceId(deviceId);
-    cameraDeviceStorage.set(deviceId);
     if (active) {
       await stop(true);
       await start(deviceId, true);

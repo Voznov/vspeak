@@ -1,3 +1,7 @@
+import { useEffect, useState } from 'react';
+
+import { EventEmitter } from './utils/EventEmitter';
+
 type StringTransformer<T, Default extends T | undefined = undefined> = {
   from: (value: string) => T;
   to: (value: T) => string;
@@ -6,22 +10,37 @@ type StringTransformer<T, Default extends T | undefined = undefined> = {
 
 const identityStringTransformer: StringTransformer<any, any> = { from: (v) => v, to: (v) => v, defaultValue: undefined };
 
-const createStorageItem = <T = string, Default extends T | undefined = undefined>(
-  key: string,
-  { from, to, defaultValue }: StringTransformer<T, Default> = identityStringTransformer,
-) => ({
-  get: () => {
-    const value = localStorage.getItem(key);
+class StorageItem<T = string, Default extends T | undefined = undefined> extends EventEmitter<{ change: T | Default }> {
+  constructor(
+    private readonly key: string,
+    private readonly transformer: StringTransformer<T, Default> = identityStringTransformer,
+  ) {
+    super();
+  }
 
-    return value !== null ? from(value) : defaultValue;
-  },
-  set: (value: T) => {
-    localStorage.setItem(key, to(value));
-  },
-  remove: () => {
-    localStorage.removeItem(key);
-  },
-});
+  get(): T | Default {
+    const value = localStorage.getItem(this.key);
+
+    return value !== null ? this.transformer.from(value) : this.transformer.defaultValue;
+  }
+
+  set(value: T): void {
+    localStorage.setItem(this.key, this.transformer.to(value));
+    this.emit('change', value);
+  }
+
+  remove(): void {
+    localStorage.removeItem(this.key);
+    this.emit('change', this.transformer.defaultValue);
+  }
+}
+
+export const useStorageItemState = <T, Default extends T | undefined>(item: StorageItem<T, Default>): [T | Default, (value: T) => void] => {
+  const [value, setValue] = useState(() => item.get());
+  useEffect(() => item.on('change', setValue), [item]);
+
+  return [value, (v) => item.set(v)];
+};
 
 const boolTransformer: StringTransformer<boolean, boolean> = {
   from: (v) => v === 'true',
@@ -29,9 +48,10 @@ const boolTransformer: StringTransformer<boolean, boolean> = {
   defaultValue: false,
 };
 
-export const tokenStorage = createStorageItem('auth_token');
-export const micEnabledStorage = createStorageItem('mic_enabled', boolTransformer);
-export const micDeviceStorage = createStorageItem('mic_device_id');
-export const cameraDeviceStorage = createStorageItem('camera_device_id');
-export const deafEnabledStorage = createStorageItem('deaf_enabled', boolTransformer);
-export const speakerDeviceStorage = createStorageItem('speaker_device_id');
+export const tokenStorage = new StorageItem('auth_token');
+export const micEnabledStorage = new StorageItem('mic_enabled', boolTransformer);
+export const micDeviceStorage = new StorageItem('mic_device_id');
+export const cameraDeviceStorage = new StorageItem('camera_device_id');
+export const deafEnabledStorage = new StorageItem('deaf_enabled', boolTransformer);
+export const speakerDeviceStorage = new StorageItem('speaker_device_id');
+export const noiseCancelStorage = new StorageItem('noise_cancel', { ...boolTransformer, defaultValue: true });

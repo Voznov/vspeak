@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import type { User } from '../../../libs/api/entities';
 import { api } from '../api';
+import { useStorageItemState, noiseCancelStorage } from '../storage';
 import { theme } from '../theme';
 import { UserAvatar } from './UserAvatar';
 
@@ -37,6 +38,7 @@ export function UserSettingsModal({ user, onClose }: Props) {
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [avatarHovered, setAvatarHovered] = useState(false);
+  const [noiseEnabled, setNoiseEnabled] = useStorageItemState(noiseCancelStorage);
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -137,6 +139,10 @@ export function UserSettingsModal({ user, onClose }: Props) {
         else reject(new Error('Failed to create blob'));
       }, 'image/png');
     });
+  };
+
+  const handleNoiseToggle = () => {
+    setNoiseEnabled(!noiseEnabled);
   };
 
   const handleUpload = async () => {
@@ -261,6 +267,42 @@ export function UserSettingsModal({ user, onClose }: Props) {
             </div>
           </div>
         )}
+
+        {/* Voice settings */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+          <div style={{ fontWeight: 600, fontSize: '13px', color: theme.text.heading }}>VOICE</div>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <div>
+              <div style={{ fontSize: '13px' }}>Noise cancellation</div>
+              <div style={{ fontSize: '11px', color: theme.text.secondary }}>Suppress keyboard, mouse and background sounds</div>
+            </div>
+            <div
+              onClick={handleNoiseToggle}
+              title={noiseEnabled ? 'Click to disable' : 'Click to enable'}
+              style={{
+                position: 'relative',
+                width: '36px',
+                height: '20px',
+                borderRadius: '10px',
+                background: noiseEnabled ? theme.accent.primary : theme.bg.tertiary,
+                cursor: 'pointer',
+                flexShrink: 0,
+                transition: 'background 0.2s',
+              }}
+            >
+              <div style={{
+                position: 'absolute',
+                top: '2px',
+                left: noiseEnabled ? '18px' : '2px',
+                width: '16px',
+                height: '16px',
+                borderRadius: '50%',
+                background: '#fff',
+                transition: 'left 0.2s',
+              }} />
+            </div>
+          </div>
+        </div>
 
         {error && (
           <div style={{ fontSize: '12px', color: theme.danger.primary }}>{error}</div>

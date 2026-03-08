@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { api } from '../../api';
-import { deafEnabledStorage, speakerDeviceStorage } from '../../storage';
+import { deafEnabledStorage, speakerDeviceStorage, useStorageItemState } from '../../storage';
 import HeadphonesIcon from '../../assets/headphones.svg?react';
 import HeadphonesOffIcon from '../../assets/headphones-off.svg?react';
 import { ControlButton } from './ControlButton';
@@ -14,7 +14,7 @@ type SpeakerButtonProps = {
 
 export function SpeakerButton({ isDeaf, onToggle, onSpeakerChange }: SpeakerButtonProps) {
   const [devices, setDevices] = useState<MediaDeviceInfo[]>([]);
-  const [selectedDeviceId, setSelectedDeviceId] = useState<string | undefined>(speakerDeviceStorage.get);
+  const [selectedDeviceId, setSelectedDeviceId] = useStorageItemState(speakerDeviceStorage);
 
   const toggle = async () => {
     const next = !isDeaf;
@@ -31,7 +31,6 @@ export function SpeakerButton({ isDeaf, onToggle, onSpeakerChange }: SpeakerButt
 
   const selectDevice = (deviceId: string) => {
     setSelectedDeviceId(deviceId);
-    speakerDeviceStorage.set(deviceId);
     onSpeakerChange(deviceId);
   };
 

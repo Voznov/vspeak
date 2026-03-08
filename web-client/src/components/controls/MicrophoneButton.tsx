@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import type { Producer, Transport } from 'mediasoup-client/types';
 import { api } from '../../api';
-import { micDeviceStorage, micEnabledStorage } from '../../storage';
+import { micDeviceStorage, micEnabledStorage, noiseCancelStorage, useStorageItemState } from '../../storage';
 import type { ProducerId } from '../../../../libs/api/entities';
 import MicIcon from '../../assets/mic.svg?react';
 import MicOffIcon from '../../assets/mic-off.svg?react';
@@ -17,10 +17,15 @@ type MicrophoneButtonProps = {
 
 export function MicrophoneButton({ sendTransport, isDeaf, onUndeafen, onLog }: MicrophoneButtonProps) {
   const [active, setActive] = useState(false);
+  const [noiseEnabled, setNoiseEnabled] = useStorageItemState(noiseCancelStorage);
   const [devices, setDevices] = useState<MediaDeviceInfo[]>([]);
-  const [selectedDeviceId, setSelectedDeviceId] = useState<string | undefined>(micDeviceStorage.get);
+  const [selectedDeviceId, setSelectedDeviceId] = useStorageItemState(micDeviceStorage);
   const producerRef = useRef<Producer | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
+  const audioContextRef = useRef<AudioContext | null>(null);
+  const sourceNodeRef = useRef<MediaStreamAudioSourceNode | null>(null);
+  const noiseNodeRef = useRef<AudioWorkletNode | null>(null);
+  const destNodeRef = useRef<MediaStreamAudioDestinationNode | null>(null);
   const wasActiveBeforeDeafRef = useRef(false);
   const prevDeafRef = useRef(isDeaf);
 
@@ -29,14 +34,24 @@ export function MicrophoneButton({ sendTransport, isDeaf, onUndeafen, onLog }: M
     setDevices(all.filter((d) => d.kind === 'audioinput'));
   };
 
+  const teardownAudio = async () => {
+    noiseNodeRef.current?.port.postMessage('destroy');
+    noiseNodeRef.current = null;
+    sourceNodeRef.current = null;
+    destNodeRef.current = null;
+    await audioContextRef.current?.close();
+    audioContextRef.current = null;
+    streamRef.current?.getTracks().forEach((t) => t.stop());
+    streamRef.current = null;
+  };
+
   const stop = async (silent = false, preserveStorage = false) => {
     if (producerRef.current) {
       await api.Voice.closeProducer({ producerId: producerRef.current.id as ProducerId });
       producerRef.current.close();
       producerRef.current = null;
     }
-    streamRef.current?.getTracks().forEach((t) => t.stop());
-    streamRef.current = null;
+    await teardownAudio();
     if (!preserveStorage) micEnabledStorage.set(false);
     setActive(false);
     if (!silent) sounds.mute();
@@ -49,37 +64,66 @@ export function MicrophoneButton({ sendTransport, isDeaf, onUndeafen, onLog }: M
         audio: {
           deviceId: deviceId ? { exact: deviceId } : undefined,
           echoCancellation: true,
-          noiseSuppression: true,
+          noiseSuppression: false,
           autoGainControl: true,
           sampleRate: 48000,
         },
       });
       streamRef.current = stream;
-      const audioTrack = stream.getAudioTracks()[0];
 
       // Detect which device was actually used and refresh labels
-      const actualDeviceId = audioTrack.getSettings().deviceId;
+      const actualDeviceId = stream.getAudioTracks()[0].getSettings().deviceId;
       if (actualDeviceId) {
         setSelectedDeviceId(actualDeviceId);
-        micDeviceStorage.set(actualDeviceId);
       }
       void loadDevices();
 
+      // Route mic through RNNoise AudioWorklet for neural noise suppression.
+      // noiseSuppression is disabled in getUserMedia above to avoid double-processing.
+      const audioCtx = new AudioContext({ sampleRate: 48000 });
+      audioContextRef.current = audioCtx;
+      await audioCtx.audioWorklet.addModule('/noise-worklet.js');
+      const source = audioCtx.createMediaStreamSource(stream);
+      const noiseNode = new AudioWorkletNode(audioCtx, 'noise-processor');
+      const dest = audioCtx.createMediaStreamDestination();
+      source.connect(noiseNode).connect(dest);
+      sourceNodeRef.current = source;
+      noiseNodeRef.current = noiseNode;
+      destNodeRef.current = dest;
+      setNoiseEnabled(true);
+
+      const audioTrack = dest.stream.getAudioTracks()[0];
       const producer = await sendTransport.produce({ track: audioTrack, appData: { source: 'user' } });
       producerRef.current = producer;
       micEnabledStorage.set(true);
       setActive(true);
       if (!silent) sounds.unmute();
     } catch (error) {
-      streamRef.current?.getTracks().forEach((t) => t.stop());
-      streamRef.current = null;
+      await teardownAudio();
       onLog(`❌ Error: ${error}`);
     }
   };
 
+  // Reconnect audio graph when noise setting changes (driven by UserSettingsModal via window event).
+  useEffect(() => {
+    const source = sourceNodeRef.current;
+    const noiseNode = noiseNodeRef.current;
+    const dest = destNodeRef.current;
+    if (!source || !noiseNode || !dest) return;
+
+    if (noiseEnabled) {
+      source.disconnect(dest);
+      source.connect(noiseNode);
+      noiseNode.connect(dest);
+    } else {
+      source.disconnect(noiseNode);
+      noiseNode.disconnect(dest);
+      source.connect(dest);
+    }
+  }, [noiseEnabled]); // eslint-disable-line react-hooks/exhaustive-deps
+
   const selectDevice = async (deviceId: string) => {
     setSelectedDeviceId(deviceId);
-    micDeviceStorage.set(deviceId);
     if (active) {
       await stop(true);
       await start(deviceId, true);
@@ -114,8 +158,7 @@ export function MicrophoneButton({ sendTransport, isDeaf, onUndeafen, onLog }: M
   // Release mic track on unmount (channel switch or leave)
   useEffect(() => {
     return () => {
-      streamRef.current?.getTracks().forEach((t) => t.stop());
-      streamRef.current = null;
+      void teardownAudio();
       producerRef.current?.close();
       producerRef.current = null;
     };
