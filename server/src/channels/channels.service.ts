@@ -119,7 +119,7 @@ export class ChannelsService implements OnModuleInit {
     if (user) {
       this.wsGateway.emitToAll('channelUserJoined', {
         channelId,
-        user: { ...user, hasMic: false, hasVideo: false, hasScreen: false, isDeaf: false },
+        user: { ...user, hasMic: false, isMuted: false, hasVideo: false, hasScreen: false, isDeaf: false },
       });
     }
 

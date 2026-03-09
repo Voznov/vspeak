@@ -34,6 +34,9 @@ export const theme = {
     text: '#ef5350',
     leave: '#c62828',
   },
+  warning: {
+    primary: '#ff9800',
+  },
   button: {
     inactive: 'rgba(255, 255, 255, 0.15)',
   },

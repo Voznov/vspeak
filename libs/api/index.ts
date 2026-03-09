@@ -29,10 +29,14 @@ import {
   type LoginResponse,
   type PauseConsumerRequest,
   type PauseConsumerResponse,
+  type PauseProducerRequest,
+  type PauseProducerResponse,
   type ProduceStreamRequest,
   type ProduceStreamResponse,
   type ResumeConsumerRequest,
   type ResumeConsumerResponse,
+  type ResumeProducerRequest,
+  type ResumeProducerResponse,
   type SetDeafRequest,
   type SetDeafResponse,
   type UpdateAvatarRequest,
@@ -71,6 +75,8 @@ abstract class Voice {
   abstract connectTransport(_: ConnectTransportRequest): Promise<ConnectTransportResponse>;
   abstract produceStream(_: ProduceStreamRequest): Promise<ProduceStreamResponse>;
   abstract closeProducer(_: CloseProducerRequest): Promise<CloseProducerResponse>;
+  abstract pauseProducer(_: PauseProducerRequest): Promise<PauseProducerResponse>;
+  abstract resumeProducer(_: ResumeProducerRequest): Promise<ResumeProducerResponse>;
   abstract consumeStream(_: ConsumeStreamRequest): Promise<ConsumeStreamResponse>;
   abstract resumeConsumer(_: ResumeConsumerRequest): Promise<ResumeConsumerResponse>;
   abstract pauseConsumer(_: PauseConsumerRequest): Promise<PauseConsumerResponse>;

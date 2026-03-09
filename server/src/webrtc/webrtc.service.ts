@@ -281,8 +281,9 @@ export class WebRTCService implements OnModuleInit {
 
   public getUserMediaStatus(userId: UserId): UserMediaStatus {
     const userInfo = this.userInfos.get(userId);
-    if (!userInfo) return { hasMic: false, hasVideo: false, hasScreen: false, isDeaf: false };
+    if (!userInfo) return { hasMic: false, isMuted: false, hasVideo: false, hasScreen: false, isDeaf: false };
     let hasMic = false;
+    let isMuted = false;
     let hasVideo = false;
     let hasScreen = false;
     for (const producer of userInfo.producers.values()) {
@@ -291,6 +292,7 @@ export class WebRTCService implements OnModuleInit {
       if (kind === 'audio') {
         if (source === 'user') {
           hasMic = true;
+          isMuted = producer.paused;
         }
       } else {
         if (source === 'user') {
@@ -301,7 +303,29 @@ export class WebRTCService implements OnModuleInit {
       }
     }
 
-    return { hasMic, hasVideo, hasScreen, isDeaf: userInfo.isDeaf };
+    return { hasMic, isMuted, hasVideo, hasScreen, isDeaf: userInfo.isDeaf };
+  }
+
+  public async pauseProducing(userId: UserId, producerId: ProducerId): Promise<void> {
+    const userInfo = this.userInfos.get(userId);
+    if (!userInfo) throw new HttpException('User not found', HttpStatus.NOT_FOUND);
+
+    const producer = userInfo.producers.get(producerId);
+    if (!producer) throw new HttpException('Producer not found', HttpStatus.NOT_FOUND);
+
+    await producer.pause();
+    this.wsGateway.emitToAll('channelUserStatusChanged', { channelId: userInfo.channelId, userId, status: this.getUserMediaStatus(userId) });
+  }
+
+  public async resumeProducing(userId: UserId, producerId: ProducerId): Promise<void> {
+    const userInfo = this.userInfos.get(userId);
+    if (!userInfo) throw new HttpException('User not found', HttpStatus.NOT_FOUND);
+
+    const producer = userInfo.producers.get(producerId);
+    if (!producer) throw new HttpException('Producer not found', HttpStatus.NOT_FOUND);
+
+    await producer.resume();
+    this.wsGateway.emitToAll('channelUserStatusChanged', { channelId: userInfo.channelId, userId, status: this.getUserMediaStatus(userId) });
   }
 
   public setIsDeaf(userId: UserId, isDeaf: boolean): void {

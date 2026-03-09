@@ -71,6 +71,30 @@ export class ConsumeStreamResponseDto extends ZodDto(
   }),
 ) {}
 
+export class PauseProducerRequestDto extends ZodDto(
+  z.object({
+    producerId: zProducerId,
+  }),
+) {}
+
+export class PauseProducerResponseDto extends ZodDto(
+  z.object({
+    success: z.boolean(),
+  }),
+) {}
+
+export class ResumeProducerRequestDto extends ZodDto(
+  z.object({
+    producerId: zProducerId,
+  }),
+) {}
+
+export class ResumeProducerResponseDto extends ZodDto(
+  z.object({
+    success: z.boolean(),
+  }),
+) {}
+
 export class ResumeConsumerRequestDto extends ZodDto(
   z.object({
     consumerId: zConsumerId,

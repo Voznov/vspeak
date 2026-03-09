@@ -26,9 +26,11 @@ type Props = {
   device: Device | null;
   isSelf: boolean;
   isDeafUser: boolean;
+  isMutedUser: boolean;
   speakerDeviceId?: string;
   onLog: (entry: string) => void;
   onSpeakingChange: (userId: UserId, speaking: boolean) => void;
+  onFatalError: () => void;
 };
 
 const ANALYSER_FFT_SIZE = 512;
@@ -42,9 +44,11 @@ export function ProducerGroupView({
   device,
   isSelf,
   isDeafUser,
+  isMutedUser,
   speakerDeviceId,
   onLog,
   onSpeakingChange,
+  onFatalError,
 }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const audioRef = useRef<HTMLAudioElement>(null);
@@ -73,7 +77,6 @@ export function ProducerGroupView({
     const consume = async (info: ProducerInfo) => {
       if (connectedIdsRef.current.has(info.producerId)) return;
       connectedIdsRef.current.add(info.producerId);
-
       try {
         const { consumerId, rtpParameters } = await api.Voice.consumeStream({
           producerUserId: info.userId,
@@ -139,6 +142,7 @@ export function ProducerGroupView({
       } catch (error) {
         connectedIdsRef.current.delete(info.producerId);
         onLog(`❌ Error consuming ${info.kind}: ${error}`);
+        onFatalError();
       }
     };
 
@@ -185,7 +189,7 @@ export function ProducerGroupView({
   };
 
   const OverlayIcon =
-    group.source === 'display' ? ScreenShareIcon : isDeafUser ? HeadphonesOffIcon : group.audio ? null : MicOffIcon;
+    group.source === 'display' ? ScreenShareIcon : isDeafUser ? HeadphonesOffIcon : isMutedUser || !group.audio ? MicOffIcon : null;
 
   return (
     <div

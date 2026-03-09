@@ -10,10 +10,14 @@ import {
   GetChannelInfoResponseDto,
   PauseConsumerRequestDto,
   PauseConsumerResponseDto,
+  PauseProducerRequestDto,
+  PauseProducerResponseDto,
   ProduceStreamRequestDto,
   ProduceStreamResponseDto,
   ResumeConsumerRequestDto,
   ResumeConsumerResponseDto,
+  ResumeProducerRequestDto,
+  ResumeProducerResponseDto,
   SetDeafRequestDto,
   SetDeafResponseDto,
 } from './webrtc.dto';
@@ -56,6 +60,22 @@ export class WebRtcController extends Api.Voice {
   async closeProducer(@Body() request: CloseProducerRequestDto): Promise<CloseProducerResponseDto> {
     const userId = getUserId();
     this.webrtcService.closeProducer(userId, request.producerId);
+
+    return { success: true };
+  }
+
+  @Rest({ response: PauseProducerResponseDto })
+  async pauseProducer(@Body() request: PauseProducerRequestDto): Promise<PauseProducerResponseDto> {
+    const userId = getUserId();
+    await this.webrtcService.pauseProducing(userId, request.producerId);
+
+    return { success: true };
+  }
+
+  @Rest({ response: ResumeProducerResponseDto })
+  async resumeProducer(@Body() request: ResumeProducerRequestDto): Promise<ResumeProducerResponseDto> {
+    const userId = getUserId();
+    await this.webrtcService.resumeProducing(userId, request.producerId);
 
     return { success: true };
   }

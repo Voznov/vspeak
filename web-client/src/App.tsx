@@ -4,7 +4,8 @@ import { ChannelSidebar } from './components/ChannelSidebar';
 import { ChannelView } from './components/ChannelView';
 import { Login } from './components/Login';
 import { UserSettingsModal } from './components/UserSettingsModal';
-import { api } from './api';
+import { api, HttpError } from './api';
+import type { ConnQuality } from './types';
 import { tokenStorage } from './storage';
 import { theme } from './theme';
 import type { ChannelId, ChannelWithUsers, User, UserId, WsEvents } from '../../libs/api/entities';
@@ -16,10 +17,17 @@ export function App() {
   const [activeChannelId, setActiveChannelId] = useState<ChannelId | null>(null);
   const [speakingUserIds, setSpeakingUserIds] = useState<Set<UserId>>(new Set());
   const [showSettings, setShowSettings] = useState(false);
+  const [isConnectionLost, setIsConnectionLost] = useState(false);
+  const [channelViewKey, setChannelViewKey] = useState(0);
+  const [connQuality, setConnQuality] = useState<ConnQuality | null>(null);
   const socketRef = useRef<Socket | null>(null);
+  const activeChannelIdRef = useRef<ChannelId | null>(null);
+  activeChannelIdRef.current = activeChannelId;
 
-  // Restore user from token on mount
+  // Restore user from token on mount, retrying forever on non-401 errors
   useEffect(() => {
+    let cancelled = false;
+
     const restoreUser = async () => {
       const token = tokenStorage.get();
       if (!token) {
@@ -27,19 +35,26 @@ export function App() {
         return;
       }
 
-      try {
-        const { user: restoredUser } = await api.User.getMe({});
-        setUser(restoredUser);
-      } catch (error) {
-        // Token is invalid, clear it
-        tokenStorage.remove();
-        console.error('Failed to restore user:', error);
-      } finally {
-        setLoading(false);
+      while (!cancelled) {
+        try {
+          const { user: restoredUser } = await api.User.getMe({});
+          if (!cancelled) setUser(restoredUser);
+          break;
+        } catch (error) {
+          if (error instanceof HttpError && error.status === 401) {
+            tokenStorage.remove();
+            break;
+          }
+          console.error('Failed to restore user, retrying...', error);
+          await new Promise((resolve) => setTimeout(resolve, 3000));
+        }
       }
+
+      if (!cancelled) setLoading(false);
     };
 
     restoreUser();
+    return () => { cancelled = true; };
   }, []);
 
   // Setup WebSocket when user is authenticated
@@ -49,6 +64,26 @@ export function App() {
 
     const socket = io('/', { auth: { token } });
     socketRef.current = socket;
+
+    let hasConnected = false;
+
+    const onConnect = () => {
+      if (hasConnected) {
+        setIsConnectionLost(false);
+        void refreshChannels();
+        if (activeChannelIdRef.current) {
+          setChannelViewKey((key) => key + 1);
+        }
+      }
+      hasConnected = true;
+    };
+
+    const onDisconnect = () => {
+      setIsConnectionLost(true);
+    };
+
+    socket.on('connect', onConnect);
+    socket.on('disconnect', onDisconnect);
 
     const onChannelCreated = (data: WsEvents['channelCreated']) => {
       setChannels((prev) => [...prev, data.channel]);
@@ -107,6 +142,8 @@ export function App() {
     socket.on('userUpdated', onUserUpdated);
 
     return () => {
+      socket.off('connect', onConnect);
+      socket.off('disconnect', onDisconnect);
       socket.off('channelCreated', onChannelCreated);
       socket.off('channelDeleted', onChannelDeleted);
       socket.off('channelUpdated', onChannelUpdated);
@@ -141,6 +178,7 @@ export function App() {
     await api.Channels.leaveChannel({ channelId: activeChannelId });
     setActiveChannelId(null);
     setSpeakingUserIds(new Set());
+    setConnQuality(null);
   };
 
   const handleCreate = async (name: string) => {
@@ -182,12 +220,28 @@ export function App() {
   const activeChannel = channels.find((ch) => ch.id === activeChannelId);
 
   return (
-    <div style={{ display: 'flex', height: '100%', overflow: 'hidden' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
+      {isConnectionLost && (
+        <div
+          style={{
+            background: '#7c3f00',
+            color: '#ffcc80',
+            textAlign: 'center',
+            fontSize: '13px',
+            padding: '5px 12px',
+            flexShrink: 0,
+          }}
+        >
+          Connection lost — reconnecting...
+        </div>
+      )}
+      <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
       <ChannelSidebar
         channels={channels}
         activeChannelId={activeChannelId}
         currentUser={user}
         speakingUserIds={speakingUserIds}
+        connQuality={connQuality}
         onJoin={handleJoin}
         onLeave={handleLeave}
         onCreate={handleCreate}
@@ -198,11 +252,13 @@ export function App() {
       <div style={{ flex: 1, overflow: 'hidden' }}>
         {activeChannel && socket ? (
           <ChannelView
+            key={channelViewKey}
             user={user}
             channel={activeChannel}
             socket={socket}
             onLeave={handleLeave}
             onSpeakingChange={handleSpeakingChange}
+            onQualityChange={setConnQuality}
           />
         ) : (
           <div
@@ -222,6 +278,7 @@ export function App() {
           onClose={() => setShowSettings(false)}
         />
       )}
+      </div>
     </div>
   );
 }

@@ -4,6 +4,15 @@ import { keys } from './utils/object';
 import { Api } from '../../libs/api';
 import { type RpcOptions } from '../../libs/rpc.interface';
 
+export class HttpError extends Error {
+  constructor(
+    public readonly status: number,
+    message: string,
+  ) {
+    super(message);
+  }
+}
+
 export const api = new Api();
 keys(api).forEach(<ModuleName extends keyof Api>(moduleName: ModuleName) => {
   api[moduleName] = new Proxy(api[moduleName], {
@@ -35,9 +44,9 @@ keys(api).forEach(<ModuleName extends keyof Api>(moduleName: ModuleName) => {
           if (!response.ok) {
             const body = await response.json().catch(() => null);
             if (typeof body === 'object' && body && 'errors' in body && Array.isArray(body.errors) && body.errors.length > 0) {
-              throw new Error(`Error${body.errors.length > 1 ? 's' : ''}:\n${body.errors.join('\n')}`);
+              throw new HttpError(response.status, `Error${body.errors.length > 1 ? 's' : ''}:\n${body.errors.join('\n')}`);
             }
-            throw new Error(`HTTP ${response.status}`);
+            throw new HttpError(response.status, `HTTP ${response.status}`);
           }
 
           return await response.json();

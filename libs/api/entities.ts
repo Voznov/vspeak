@@ -19,6 +19,7 @@ export type Channel = {
 
 export type UserMediaStatus = {
   hasMic: boolean;
+  isMuted: boolean;
   hasVideo: boolean;
   hasScreen: boolean;
   isDeaf: boolean;
@@ -300,6 +301,22 @@ export type CloseProducerRequest = {
 };
 
 export type CloseProducerResponse = {
+  success: boolean;
+};
+
+export type PauseProducerRequest = {
+  producerId: ProducerId;
+};
+
+export type PauseProducerResponse = {
+  success: boolean;
+};
+
+export type ResumeProducerRequest = {
+  producerId: ProducerId;
+};
+
+export type ResumeProducerResponse = {
   success: boolean;
 };
 

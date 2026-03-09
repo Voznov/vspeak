@@ -11,6 +11,7 @@ import { theme } from '../theme';
 import { calculateGrid } from '../utils/calculateGrid';
 import type { ChannelWithUsers, ProducerInfo, ProducerSource, User, UserId, WsEvents } from '../../../libs/api/entities';
 import { sounds } from '../sounds';
+import type { ConnQuality } from '../types';
 
 type ChannelViewProps = {
   user: User;
@@ -18,6 +19,7 @@ type ChannelViewProps = {
   socket: Socket;
   onLeave: () => void;
   onSpeakingChange: (userId: UserId, speaking: boolean) => void;
+  onQualityChange: (quality: ConnQuality | null) => void;
 };
 
 const groupProducers = (infos: ProducerInfo[], channelUsers: User[]): ProducerGroup[] => {
@@ -41,12 +43,13 @@ const groupProducers = (infos: ProducerInfo[], channelUsers: User[]): ProducerGr
   );
 };
 
-export function ChannelView({ user, socket, channel, onLeave, onSpeakingChange }: ChannelViewProps) {
+export function ChannelView({ user, socket, channel, onLeave, onSpeakingChange, onQualityChange }: ChannelViewProps) {
   const deviceRef = useRef<Device | null>(null);
   const [sendTransport, setSendTransport] = useState<Transport | null>(null);
   const [recvTransport, setRecvTransport] = useState<Transport | null>(null);
   const [producerInfos, setProducerInfos] = useState<ProducerInfo[]>([]);
   const [connecting, setConnecting] = useState(true);
+  const [connectionAttempt, setConnectionAttempt] = useState(0);
   const [speakerDeviceId, setSpeakerDeviceId] = useStorageItemState(speakerDeviceStorage);
 
   const sendTransportRef = useRef<Transport | null>(null);
@@ -199,6 +202,52 @@ export function ChannelView({ user, socket, channel, onLeave, onSpeakingChange }
     }
   };
 
+  // Poll WebRTC stats for connection quality (RTT, packet loss, jitter)
+  useEffect(() => {
+    if (!recvTransport) return;
+    const poll = async () => {
+      try {
+        const recvStats = await recvTransport.getStats();
+
+        let rtt: number | null = null;
+        for (const report of recvStats.values()) {
+          const r = report as RTCIceCandidatePairStats;
+          if (r.type === 'candidate-pair' && r.nominated && r.currentRoundTripTime !== undefined) {
+            rtt = Math.round(r.currentRoundTripTime * 1000);
+          }
+        }
+
+        let jitter: number | null = null;
+        for (const report of recvStats.values()) {
+          const r = report as RTCInboundRtpStreamStats;
+          if (r.type === 'inbound-rtp' && r.kind === 'audio' && r.jitter !== undefined) {
+            jitter = Math.round(r.jitter * 1000);
+          }
+        }
+
+        let packetLoss: number | null = null;
+        if (sendTransport) {
+          const sendStats = await sendTransport.getStats();
+          for (const report of sendStats.values()) {
+            const r = report as RTCInboundRtpStreamStats & { roundTripTime?: number; fractionLost?: number };
+            if (r.type === 'remote-inbound-rtp' && r.fractionLost !== undefined) {
+              packetLoss = Math.round(r.fractionLost * 100);
+            }
+          }
+        }
+
+        if (rtt !== null && jitter !== null) {
+          onQualityChange({ rtt, packetLoss, jitter });
+        }
+      } catch {
+        // ignore stats errors
+      }
+    };
+    void poll();
+    const id = setInterval(() => void poll(), 1000);
+    return () => clearInterval(id);
+  }, [sendTransport, recvTransport]);
+
   // Auto-connect transports when joining a channel; cleanup on leave or channel switch
   useEffect(() => {
     void createTransports();
@@ -208,7 +257,7 @@ export function ChannelView({ user, socket, channel, onLeave, onSpeakingChange }
       sendTransportRef.current = null;
       recvTransportRef.current = null;
     };
-  }, [channel.id]);
+  }, [channel.id, connectionAttempt]);
 
   // Track grid container size for optimal layout calculation
   useEffect(() => {
@@ -259,15 +308,18 @@ export function ChannelView({ user, socket, channel, onLeave, onSpeakingChange }
                   device={deviceRef.current}
                   isSelf={group.userId === user.id}
                   isDeafUser={channelUsersRef.current.some((u) => u.id === group.userId && u.isDeaf)}
+                  isMutedUser={channelUsersRef.current.some((u) => u.id === group.userId && u.isMuted)}
                   speakerDeviceId={speakerDeviceId}
                   onLog={addLog}
                   onSpeakingChange={handleSpeakingChange}
+                  onFatalError={() => setConnectionAttempt((n) => n + 1)}
                 />
               </div>
             ))}
           </div>
         ))}
       </div>
+
 
       {connecting && (
         <div

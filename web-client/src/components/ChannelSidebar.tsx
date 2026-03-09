@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import type { ChannelId, ChannelWithUsers, User, UserId } from '../../../libs/api/entities';
+import type { ConnQuality } from '../types';
+import { ConnectedChannelPanel } from './ConnectedChannelPanel';
 import HeadphonesOffIcon from '../assets/headphones-off.svg?react';
 import MicOffIcon from '../assets/mic-off.svg?react';
 import ScreenShareIcon from '../assets/screen-share.svg?react';
@@ -12,6 +14,7 @@ type ChannelSidebarProps = {
   activeChannelId: ChannelId | null;
   currentUser: User;
   speakingUserIds: Set<UserId>;
+  connQuality: ConnQuality | null;
   onJoin: (channelId: ChannelId) => void;
   onLeave: () => Promise<void>;
   onCreate: (name: string) => Promise<void>;
@@ -176,6 +179,7 @@ export function ChannelSidebar({
   activeChannelId,
   currentUser,
   speakingUserIds,
+  connQuality,
   onJoin,
   onLeave,
   onCreate,
@@ -186,6 +190,7 @@ export function ChannelSidebar({
   const [channelModal, setChannelModal] = useState<ChannelModalMode | null>(null);
   const [contextMenu, setContextMenu] = useState<ContextMenu | null>(null);
   const [panelHovered, setPanelHovered] = useState(false);
+  const activeChannelName = channels.find((ch) => ch.id === activeChannelId)?.name;
 
   useEffect(() => {
     if (!contextMenu) return;
@@ -330,7 +335,7 @@ export function ChannelSidebar({
                             {user.isDeaf ? (
                               <HeadphonesOffIcon width={14} height={14} />
                             ) : (
-                              !user.hasMic && <MicOffIcon width={14} height={14} />
+                              (!user.hasMic || user.isMuted) && <MicOffIcon width={14} height={14} />
                             )}
                             {user.hasVideo && <VideoIcon width={14} height={14} />}
                             {user.hasScreen && <ScreenShareIcon width={14} height={14} />}
@@ -348,6 +353,15 @@ export function ChannelSidebar({
             )}
           </div>
         </div>
+
+        {/* Connected channel panel */}
+        {activeChannelName && (
+          <ConnectedChannelPanel
+            channelName={activeChannelName}
+            connQuality={connQuality}
+            onLeave={() => void onLeave()}
+          />
+        )}
 
         {/* Current user panel */}
         <div
