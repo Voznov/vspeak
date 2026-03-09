@@ -20,7 +20,7 @@ export class UserController extends Api.User {
     const user = await this.userService.getUser(userId);
 
     if (!user) {
-      throw new HttpException('User not found', HttpStatus.NOT_FOUND);
+      throw new HttpException('Unauthorized', HttpStatus.UNAUTHORIZED);
     }
 
     return { user };
