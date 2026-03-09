@@ -70,7 +70,7 @@ abstract class Channels {
   abstract getChannelUsers(_: GetChannelUsersRequest): Promise<GetChannelUsersResponse>;
 }
 
-abstract class Voice {
+abstract class WebRtc {
   abstract getChannelInfo(_: GetChannelInfoRequest): Promise<GetChannelInfoResponse>;
   abstract connectTransport(_: ConnectTransportRequest): Promise<ConnectTransportResponse>;
   abstract produceStream(_: ProduceStreamRequest): Promise<ProduceStreamResponse>;
@@ -83,4 +83,4 @@ abstract class Voice {
   abstract setDeaf(_: SetDeafRequest): Promise<SetDeafResponse>;
 }
 
-export class Api extends createRpcInterface({ Auth, User, Channels, Voice }) {}
+export class Api extends createRpcInterface({ Auth, User, Channels, WebRtc }) {}

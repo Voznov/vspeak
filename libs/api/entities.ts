@@ -105,7 +105,7 @@ export type GetChannelUsersResponse = {
   users: User[];
 };
 
-// Voice / WebRTC types
+// WebRTC types
 export type TransportId = Branded<string, 'TransportId'>;
 export type ProducerId = Branded<string, 'ProducerId'>;
 export type ConsumerId = Branded<string, 'ConsumerId'>;

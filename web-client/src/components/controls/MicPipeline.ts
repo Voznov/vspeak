@@ -51,7 +51,7 @@ export class MicPipeline {
     this.queue = this.queue
       .then(async () => {
         if (this.rawTrack) this.rawTrack.enabled = false;
-        if (this.producer) await api.Voice.pauseProducer({ producerId: this.producer.id as ProducerId });
+        if (this.producer) await api.WebRtc.pauseProducer({ producerId: this.producer.id as ProducerId });
         this.callbacks.onStateChange({ active: false });
       })
       .catch((e) => console.error('[MicPipeline] mute error:', e));
@@ -63,7 +63,7 @@ export class MicPipeline {
       .then(async () => {
         if (this.rawTrack) {
           this.rawTrack.enabled = true;
-          if (this.producer) await api.Voice.resumeProducer({ producerId: this.producer.id as ProducerId });
+          if (this.producer) await api.WebRtc.resumeProducer({ producerId: this.producer.id as ProducerId });
           this.callbacks.onStateChange({ active: true });
         } else {
           await this.runStart(transport, deviceId);
@@ -144,7 +144,7 @@ export class MicPipeline {
 
   private async teardown(): Promise<void> {
     if (this.producer) {
-      await api.Voice.closeProducer({ producerId: this.producer.id as ProducerId });
+      await api.WebRtc.closeProducer({ producerId: this.producer.id as ProducerId });
       this.producer.close();
       this.producer = null;
     }

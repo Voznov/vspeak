@@ -20,7 +20,7 @@ export function SpeakerButton({ onSpeakerChange }: SpeakerButtonProps) {
     setIsDeaf(next);
     if (next) sounds.deafen();
     else sounds.undeafen();
-    await api.Voice.setDeaf({ isDeaf: next });
+    await api.WebRtc.setDeaf({ isDeaf: next });
   };
 
   const loadDevices = async () => {

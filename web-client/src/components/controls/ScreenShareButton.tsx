@@ -20,12 +20,12 @@ export function ScreenShareButton({ sendTransport, onLog }: ScreenShareButtonPro
 
   const stop = async () => {
     if (videoProducerRef.current) {
-      await api.Voice.closeProducer({ producerId: videoProducerRef.current.id as ProducerId });
+      await api.WebRtc.closeProducer({ producerId: videoProducerRef.current.id as ProducerId });
       videoProducerRef.current.close();
       videoProducerRef.current = null;
     }
     if (audioProducerRef.current) {
-      await api.Voice.closeProducer({ producerId: audioProducerRef.current.id as ProducerId });
+      await api.WebRtc.closeProducer({ producerId: audioProducerRef.current.id as ProducerId });
       audioProducerRef.current.close();
       audioProducerRef.current = null;
     }

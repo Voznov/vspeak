@@ -1,7 +1,7 @@
 {
   "name": "vspeak",
   "version": "0.1.0",
-  "description": "Self-hosted voice & text communication platform with WebRTC",
+  "description": "Self-hosted communication platform",
   "repository": {
     "type": "git",
     "url": "https://github.com/voznov/vspeak.git"

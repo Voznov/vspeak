@@ -55,7 +55,7 @@ export function MicrophoneButton({ sendTransport, onLog }: MicrophoneButtonProps
   const onUndeafen = () => {
     setIsDeaf(false);
     sounds.undeafen();
-    void api.Voice.setDeaf({ isDeaf: false });
+    void api.WebRtc.setDeaf({ isDeaf: false });
   };
 
   const mute = (silent = false) => {
