@@ -9,6 +9,8 @@ import {
   type ConsumeStreamResponse,
   type CreateChannelRequest,
   type CreateChannelResponse,
+  type CreateTransportsRequest,
+  type CreateTransportsResponse,
   type DeleteChannelRequest,
   type DeleteChannelResponse,
   type GetChannelInfoRequest,
@@ -71,6 +73,7 @@ abstract class Channels {
 }
 
 abstract class WebRtc {
+  abstract createTransports(_: CreateTransportsRequest): Promise<CreateTransportsResponse>;
   abstract getChannelInfo(_: GetChannelInfoRequest): Promise<GetChannelInfoResponse>;
   abstract connectTransport(_: ConnectTransportRequest): Promise<ConnectTransportResponse>;
   abstract produceStream(_: ProduceStreamRequest): Promise<ProduceStreamResponse>;

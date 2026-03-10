@@ -1,21 +1,11 @@
-import { HttpException, HttpStatus, Injectable, type OnModuleInit } from '@nestjs/common';
+import { forwardRef, HttpException, HttpStatus, Inject, Injectable, type OnModuleInit } from '@nestjs/common';
 import { createWorker } from 'mediasoup';
-import {
-  Consumer,
-  DtlsParameters,
-  IceCandidate,
-  IceParameters,
-  Producer,
-  Router,
-  RouterRtpCodecCapability,
-  RtpCapabilities,
-  RtpParameters,
-  Transport,
-  WebRtcTransport,
-  Worker,
-} from 'mediasoup/types';
+import { Consumer, DtlsParameters, Producer, Router, RouterRtpCodecCapability, RtpCapabilities, RtpParameters, Transport, WebRtcTransport, Worker } from 'mediasoup/types';
 import { ChannelId, ConsumerId, ProducerId, ProducerInfo, ProducerKind, ProducerSource, TransportId, UserId, UserMediaStatus } from '../../../libs/api/entities';
+// eslint-disable-next-line import-x/no-cycle
+import { ChannelsService } from '../channels/channels.service';
 import { ENV } from '../env';
+import { TransportInfoDto } from '../shared.dto';
 import { WsGateway } from '../ws/ws.gateway';
 
 type UserInfo = {
@@ -31,20 +21,16 @@ type ChannelInfo = {
   router: Router;
 };
 
-type TransportInfo = {
-  transportId: TransportId;
-  iceParameters: IceParameters;
-  iceCandidates: IceCandidate[];
-  dtlsParameters: DtlsParameters;
-};
-
 @Injectable()
 export class WebRTCService implements OnModuleInit {
   private worker!: Worker;
   private readonly userInfos = new Map<UserId, UserInfo>();
   private readonly channelInfos = new Map<ChannelId, ChannelInfo>();
 
-  constructor(private readonly wsGateway: WsGateway) {}
+  constructor(
+    private readonly wsGateway: WsGateway,
+    @Inject(forwardRef(() => ChannelsService)) private readonly channelsService: ChannelsService,
+  ) {}
 
   async onModuleInit() {
     this.worker = await createWorker({
@@ -149,7 +135,7 @@ export class WebRTCService implements OnModuleInit {
     return { capabilities: channelInfo.router.rtpCapabilities, producerInfos };
   }
 
-  public async createTransports(userId: UserId, channelId: ChannelId, onDisconnect: () => void) {
+  public async createTransports(userId: UserId, channelId: ChannelId) {
     const channelInfo = this.channelInfos.get(channelId);
     if (!channelInfo) {
       throw new HttpException('Unknown channel id', HttpStatus.NOT_FOUND);
@@ -163,7 +149,7 @@ export class WebRTCService implements OnModuleInit {
     // onClose callback calls closeTransports and the provided onDisconnect
     const handleTransportClose = () => {
       this.closeTransports(userId);
-      onDisconnect(); // Notify ChannelsService
+      this.channelsService.onUserDisconnected(userId, channelId);
     };
 
     const recvTransport = await this.createTransport(channelInfo.router, handleTransportClose);
@@ -178,16 +164,17 @@ export class WebRTCService implements OnModuleInit {
       isDeaf: false,
     };
     this.userInfos.set(userId, userInfo);
+    this.wsGateway.emitToAll('channelUserStatusChanged', { channelId, userId, status: this.getUserMediaStatus(userId) });
 
     void this.wsGateway.joinRoom(userId, channelId);
 
-    const send: TransportInfo = {
+    const send: TransportInfoDto = {
       transportId: sendTransport.id as TransportId,
       dtlsParameters: sendTransport.dtlsParameters,
       iceCandidates: sendTransport.iceCandidates,
       iceParameters: sendTransport.iceParameters,
     };
-    const recv: TransportInfo = {
+    const recv: TransportInfoDto = {
       transportId: recvTransport.id as TransportId,
       dtlsParameters: recvTransport.dtlsParameters,
       iceCandidates: recvTransport.iceCandidates,
@@ -281,7 +268,7 @@ export class WebRTCService implements OnModuleInit {
 
   public getUserMediaStatus(userId: UserId): UserMediaStatus {
     const userInfo = this.userInfos.get(userId);
-    if (!userInfo) return { hasMic: false, isMuted: false, hasVideo: false, hasScreen: false, isDeaf: false };
+    if (!userInfo) return { isConnected: false, hasMic: false, isMuted: false, hasVideo: false, hasScreen: false, isDeaf: false };
     let hasMic = false;
     let isMuted = false;
     let hasVideo = false;
@@ -303,7 +290,7 @@ export class WebRTCService implements OnModuleInit {
       }
     }
 
-    return { hasMic, isMuted, hasVideo, hasScreen, isDeaf: userInfo.isDeaf };
+    return { isConnected: true, hasMic, isMuted, hasVideo, hasScreen, isDeaf: userInfo.isDeaf };
   }
 
   public async pauseProducing(userId: UserId, producerId: ProducerId): Promise<void> {

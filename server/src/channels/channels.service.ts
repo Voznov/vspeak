@@ -3,6 +3,7 @@ import { ChannelsRepo } from './channels.repo';
 import type { ChannelId, UserId } from '../../../libs/api/entities';
 import { ChannelWithUsersDto, UserWithStatusDto } from '../shared.dto';
 import { UserService } from '../user/user.service';
+// eslint-disable-next-line import-x/no-cycle
 import { WebRTCService } from '../webrtc/webrtc.service';
 import { WsGateway } from '../ws/ws.gateway';
 
@@ -107,23 +108,17 @@ export class ChannelsService implements OnModuleInit {
       await this.leaveChannel(userId, currentChannelId);
     }
 
-    // Create WebRTC transports with a disconnect callback
-    const transports = await this.webrtcService.createTransports(userId, channelId, () => {
-      this.onUserDisconnected(userId, channelId);
-    });
-
     // Add the user to the channel
     rt.userIds.add(userId);
 
-    const user = await this.userService.getUser(userId);
+    const [user, channel] = await Promise.all([this.userService.getUser(userId), this.repo.getChannelById(channelId)]);
+
     if (user) {
       this.wsGateway.emitToAll('channelUserJoined', {
         channelId,
-        user: { ...user, hasMic: false, isMuted: false, hasVideo: false, hasScreen: false, isDeaf: false },
+        user: { ...user, isConnected: false, hasMic: false, isMuted: false, hasVideo: false, hasScreen: false, isDeaf: false },
       });
     }
-
-    const channel = await this.repo.getChannelById(channelId);
 
     return {
       channel: {
@@ -131,7 +126,6 @@ export class ChannelsService implements OnModuleInit {
         name: channel!.name,
         users: await this.getChannelUsers(channelId),
       },
-      ...transports,
     };
   }
 
@@ -146,7 +140,7 @@ export class ChannelsService implements OnModuleInit {
   }
 
   // Called when a transport closes (for any reason); idempotent — safe to call multiple times
-  private onUserDisconnected(userId: UserId, channelId: ChannelId): void {
+  public onUserDisconnected(userId: UserId, channelId: ChannelId): void {
     const rt = this.runtime.get(channelId);
     if (rt && rt.userIds.has(userId)) {
       rt.userIds.delete(userId);

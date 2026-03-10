@@ -45,7 +45,15 @@ function ContextMenuButton({
   return (
     <button
       onClick={onClick}
-      style={{ padding: '9px 16px', fontSize: '13px', background: 'transparent', border: 'none', cursor: 'pointer', textAlign: 'left', color }}
+      style={{
+        padding: '9px 16px',
+        fontSize: '13px',
+        background: 'transparent',
+        border: 'none',
+        cursor: 'pointer',
+        textAlign: 'left',
+        color,
+      }}
       onMouseEnter={(e) => ((e.currentTarget as HTMLButtonElement).style.background = hoverBg)}
       onMouseLeave={(e) => ((e.currentTarget as HTMLButtonElement).style.background = 'transparent')}
     >
@@ -88,7 +96,7 @@ function ChannelModal({
   };
 
   const title = mode.type === 'create' ? 'Create Channel' : 'Rename Channel';
-  const submitLabel = mode.type === 'create' ? (loading ? 'Creating…' : 'Create') : (loading ? 'Saving…' : 'Save');
+  const submitLabel = mode.type === 'create' ? (loading ? 'Creating…' : 'Create') : loading ? 'Saving…' : 'Save';
 
   return (
     <div
@@ -190,7 +198,9 @@ export function ChannelSidebar({
   const [channelModal, setChannelModal] = useState<ChannelModalMode | null>(null);
   const [contextMenu, setContextMenu] = useState<ContextMenu | null>(null);
   const [panelHovered, setPanelHovered] = useState(false);
-  const activeChannelName = channels.find((ch) => ch.id === activeChannelId)?.name;
+  const activeChannel = channels.find((ch) => ch.id === activeChannelId);
+  const activeChannelName = activeChannel?.name;
+  const currentUserIsConnected = activeChannel?.users.find((u) => u.id === currentUser.id)?.isConnected ?? true;
 
   useEffect(() => {
     if (!contextMenu) return;
@@ -246,7 +256,16 @@ export function ChannelSidebar({
         }}
       >
         {/* Channel list */}
-        <div style={{ flex: 1, overflowY: 'auto', padding: '12px 8px', display: 'flex', flexDirection: 'column', gap: '4px' }}>
+        <div
+          style={{
+            flex: 1,
+            overflowY: 'auto',
+            padding: '12px 8px',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '4px',
+          }}
+        >
           <div style={{ display: 'flex', alignItems: 'center', marginBottom: '8px', paddingLeft: '4px' }}>
             <div style={{ flex: 1, fontWeight: 700, fontSize: '13px', color: theme.text.heading }}>CHANNELS</div>
             <button
@@ -327,6 +346,7 @@ export function ChannelSidebar({
                             avatarUrl={user.avatarUrl}
                             size={18}
                             isSpeaking={speakingUserIds.has(user.id)}
+                            isConnected={user.isConnected}
                           />
                           <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                             {user.nickname}
@@ -386,6 +406,7 @@ export function ChannelSidebar({
             avatarUrl={currentUser.avatarUrl}
             size={32}
             isSpeaking={speakingUserIds.has(currentUser.id)}
+            isConnected={currentUserIsConnected}
           />
           <div style={{ flex: 1, overflow: 'hidden' }}>
             <div
@@ -409,9 +430,7 @@ export function ChannelSidebar({
         <ChannelModal
           mode={channelModal}
           onSubmit={(name) =>
-            channelModal.type === 'create'
-              ? onCreate(name)
-              : onRename(channelModal.channelId, name)
+            channelModal.type === 'create' ? onCreate(name) : onRename(channelModal.channelId, name)
           }
           onClose={() => setChannelModal(null)}
         />

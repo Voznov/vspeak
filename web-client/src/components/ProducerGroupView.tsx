@@ -15,6 +15,7 @@ export type ProducerGroup = {
   nickname: string;
   bgColor: string;
   avatarUrl?: string;
+  isConnected: boolean;
   source: ProducerSource;
   audio?: ProducerInfo;
   video?: ProducerInfo;
@@ -251,6 +252,7 @@ export function ProducerGroupView({
               bgColor={group.bgColor}
               avatarUrl={group.avatarUrl}
               size={72}
+              isConnected={group.isConnected}
             />
           </div>
         )}

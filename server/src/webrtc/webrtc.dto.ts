@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { ZodDto } from '../../libs/validation';
-import { DtlsParametersDto, ProducerInfoDto, RtpCapabilitiesDto, RtpParametersDto, zChannelId, zConsumerId, zProducerId, zTransportId, zUserId } from '../shared.dto';
+import { DtlsParametersDto, ProducerInfoDto, RtpCapabilitiesDto, RtpParametersDto, TransportInfoDto, zChannelId, zConsumerId, zProducerId, zTransportId, zUserId } from '../shared.dto';
 
 export class GetChannelInfoRequestDto extends ZodDto(
   z.object({
@@ -128,5 +128,18 @@ export class SetDeafRequestDto extends ZodDto(
 export class SetDeafResponseDto extends ZodDto(
   z.object({
     success: z.boolean(),
+  }),
+) {}
+
+export class CreateTransportsRequestDto extends ZodDto(
+  z.object({
+    channelId: zChannelId,
+  }),
+) {}
+
+export class CreateTransportsResponseDto extends ZodDto(
+  z.object({
+    send: TransportInfoDto,
+    recv: TransportInfoDto,
   }),
 ) {}

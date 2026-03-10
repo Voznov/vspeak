@@ -18,6 +18,7 @@ export type Channel = {
 };
 
 export type UserMediaStatus = {
+  isConnected: boolean;
   hasMic: boolean;
   isMuted: boolean;
   hasVideo: boolean;
@@ -85,6 +86,13 @@ export type JoinChannelRequest = {
 
 export type JoinChannelResponse = {
   channel: ChannelWithUsers;
+};
+
+export type CreateTransportsRequest = {
+  channelId: ChannelId;
+};
+
+export type CreateTransportsResponse = {
   send: TransportInfo;
   recv: TransportInfo;
 };

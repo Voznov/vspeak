@@ -18,6 +18,7 @@ export class UserDto extends ZodDto(
 
 export class UserWithStatusDto extends ZodDto(
   UserDto.extend({
+    isConnected: z.boolean(),
     hasMic: z.boolean(),
     isMuted: z.boolean(),
     hasVideo: z.boolean(),

@@ -6,6 +6,8 @@ import {
   ConnectTransportResponseDto,
   ConsumeStreamRequestDto,
   ConsumeStreamResponseDto,
+  CreateTransportsRequestDto,
+  CreateTransportsResponseDto,
   GetChannelInfoRequestDto,
   GetChannelInfoResponseDto,
   PauseConsumerRequestDto,
@@ -27,11 +29,18 @@ import { getUserId } from '../auth/cls.helper';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { Rest, RestController } from '../utils/decorators';
 
-@RestController('webrtc')
+@RestController('web-rtc')
 @UseGuards(JwtAuthGuard)
 export class WebRtcController extends Api.WebRtc {
   constructor(private readonly webrtcService: WebRTCService) {
     super();
+  }
+
+  @Rest({ response: CreateTransportsResponseDto })
+  async createTransports(@Body() request: CreateTransportsRequestDto): Promise<CreateTransportsResponseDto> {
+    const userId = getUserId();
+
+    return this.webrtcService.createTransports(userId, request.channelId);
   }
 
   @Rest({ response: GetChannelInfoResponseDto })

@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { ZodDto } from '../../libs/validation';
-import { ChannelDto, ChannelWithUsersDto, TransportInfoDto, UserDto, zChannelId } from '../shared.dto';
+import { ChannelDto, ChannelWithUsersDto, UserDto, zChannelId } from '../shared.dto';
 
 export class UpdateChannelRequestDto extends ZodDto(
   z.object({
@@ -54,8 +54,6 @@ export class JoinChannelRequestDto extends ZodDto(
 export class JoinChannelResponseDto extends ZodDto(
   z.object({
     channel: ChannelWithUsersDto,
-    send: TransportInfoDto,
-    recv: TransportInfoDto,
   }),
 ) {}
 

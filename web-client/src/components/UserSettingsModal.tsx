@@ -235,7 +235,7 @@ export function UserSettingsModal({ user, onClose }: Props) {
             onMouseEnter={() => setAvatarHovered(true)}
             onMouseLeave={() => setAvatarHovered(false)}
           >
-            <UserAvatar nickname={user.nickname} bgColor={selectedColor} avatarUrl={user.avatarUrl} size={48} />
+            <UserAvatar nickname={user.nickname} bgColor={selectedColor} avatarUrl={user.avatarUrl} size={48} isConnected />
             {avatarHovered && (
               <div
                 style={{
