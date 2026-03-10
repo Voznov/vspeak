@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 
 import { EventEmitter } from './utils/EventEmitter';
+import { type ChannelId } from '../../libs/api/entities';
 
 type StringTransformer<T, Default extends T | undefined = undefined> = {
   from: (value: string) => T;
@@ -10,7 +11,9 @@ type StringTransformer<T, Default extends T | undefined = undefined> = {
 
 const identityStringTransformer: StringTransformer<any, any> = { from: (v) => v, to: (v) => v, defaultValue: undefined };
 
-class StorageItem<T = string, Default extends T | undefined = undefined> extends EventEmitter<{ change: T | Default }> {
+abstract class StorageItem<T = string, Default extends T | undefined = undefined> extends EventEmitter<{ change: T | Default }> {
+  protected abstract storage: Storage;
+
   constructor(
     private readonly key: string,
     private readonly transformer: StringTransformer<T, Default> = identityStringTransformer,
@@ -19,27 +22,35 @@ class StorageItem<T = string, Default extends T | undefined = undefined> extends
   }
 
   get(): T | Default {
-    const value = localStorage.getItem(this.key);
+    const value = this.storage.getItem(this.key);
 
     return value !== null ? this.transformer.from(value) : this.transformer.defaultValue;
   }
 
   set(value: T): void {
-    localStorage.setItem(this.key, this.transformer.to(value));
+    this.storage.setItem(this.key, this.transformer.to(value));
     this.emit('change', value);
   }
 
   remove(): void {
-    localStorage.removeItem(this.key);
+    this.storage.removeItem(this.key);
     this.emit('change', this.transformer.defaultValue);
   }
 }
 
-export const useStorageItemState = <T, Default extends T | undefined>(item: StorageItem<T, Default>): [T | Default, (value: T) => void] => {
+class LocalStorageItem<T = string, Default extends T | undefined = undefined> extends StorageItem<T, Default> {
+  protected storage = localStorage;
+}
+
+class SessionStorageItem<T = string, Default extends T | undefined = undefined> extends StorageItem<T, Default> {
+  protected storage = sessionStorage;
+}
+
+export const useStorageItemState = <T, Default extends T | undefined>(item: StorageItem<T, Default>): [T | Default, (value: T | undefined) => void] => {
   const [value, setValue] = useState(() => item.get());
   useEffect(() => item.on('change', setValue), [item]);
 
-  return [value, (v) => item.set(v)];
+  return [value, (v) => (v === undefined ? item.remove() : item.set(v))];
 };
 
 const boolTransformer: StringTransformer<boolean, boolean> = {
@@ -48,10 +59,12 @@ const boolTransformer: StringTransformer<boolean, boolean> = {
   defaultValue: false,
 };
 
-export const tokenStorage = new StorageItem('auth_token');
-export const micEnabledStorage = new StorageItem('mic_enabled', boolTransformer);
-export const micDeviceStorage = new StorageItem('mic_device_id');
-export const cameraDeviceStorage = new StorageItem('camera_device_id');
-export const deafEnabledStorage = new StorageItem('deaf_enabled', boolTransformer);
-export const speakerDeviceStorage = new StorageItem('speaker_device_id');
-export const noiseCancelStorage = new StorageItem('noise_cancel', { ...boolTransformer, defaultValue: true });
+export const activeChannelStorage = new SessionStorageItem<ChannelId | undefined>('active_channel_id');
+
+export const tokenStorage = new LocalStorageItem('auth_token');
+export const micEnabledStorage = new LocalStorageItem('mic_enabled', boolTransformer);
+export const micDeviceStorage = new LocalStorageItem('mic_device_id');
+export const cameraDeviceStorage = new LocalStorageItem('camera_device_id');
+export const deafEnabledStorage = new LocalStorageItem('deaf_enabled', boolTransformer);
+export const speakerDeviceStorage = new LocalStorageItem('speaker_device_id');
+export const noiseCancelStorage = new LocalStorageItem('noise_cancel', { ...boolTransformer, defaultValue: true });

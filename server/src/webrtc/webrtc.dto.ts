@@ -1,6 +1,17 @@
 import { z } from 'zod';
 import { ZodDto } from '../../libs/validation';
-import { DtlsParametersDto, ProducerInfoDto, RtpCapabilitiesDto, RtpParametersDto, TransportInfoDto, zChannelId, zConsumerId, zProducerId, zTransportId, zUserId } from '../shared.dto';
+import {
+  DtlsParametersDto,
+  ProducerInfoDto,
+  RtpCapabilitiesDto,
+  RtpParametersDto,
+  TransportInfoDto,
+  zChannelId,
+  zConsumerId,
+  zProducerId,
+  zTransportId,
+  zUserId,
+} from '../shared.dto';
 
 export class GetChannelInfoRequestDto extends ZodDto(
   z.object({

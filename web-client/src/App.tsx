@@ -6,22 +6,23 @@ import { Login } from './components/Login';
 import { UserSettingsModal } from './components/UserSettingsModal';
 import { api, HttpError } from './api';
 import type { ConnQuality } from './types';
-import { tokenStorage } from './storage';
+import { activeChannelStorage, tokenStorage, useStorageItemState } from './storage';
 import { theme } from './theme';
 import type { ChannelId, ChannelWithUsers, User, UserId, WsEvents } from '../../libs/api/entities';
+
 
 export function App() {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [channels, setChannels] = useState<ChannelWithUsers[]>([]);
-  const [activeChannelId, setActiveChannelId] = useState<ChannelId | null>(null);
+  const [activeChannelId, setActiveChannelId] = useStorageItemState(activeChannelStorage);
   const [speakingUserIds, setSpeakingUserIds] = useState<Set<UserId>>(new Set());
   const [showSettings, setShowSettings] = useState(false);
   const [isConnectionLost, setIsConnectionLost] = useState(false);
   const [channelViewKey, setChannelViewKey] = useState(0);
   const [connQuality, setConnQuality] = useState<ConnQuality | null>(null);
   const socketRef = useRef<Socket | null>(null);
-  const activeChannelIdRef = useRef<ChannelId | null>(null);
+  const activeChannelIdRef = useRef<ChannelId | undefined>(undefined);
   activeChannelIdRef.current = activeChannelId;
 
   // Restore user from token on mount, retrying forever on non-401 errors
@@ -90,7 +91,9 @@ export function App() {
     };
     const onChannelDeleted = (data: WsEvents['channelDeleted']) => {
       setChannels((prev) => prev.filter((ch) => ch.id !== data.channelId));
-      setActiveChannelId((current) => (current === data.channelId ? null : current));
+      if (activeChannelIdRef.current === data.channelId) {
+        setActiveChannelId(undefined);
+      }
     };
     const onChannelUserJoined = (data: WsEvents['channelUserJoined']) => {
       setChannels((prev) =>
@@ -176,7 +179,7 @@ export function App() {
   const handleLeave = async () => {
     if (!activeChannelId) return;
     await api.Channels.leaveChannel({ channelId: activeChannelId });
-    setActiveChannelId(null);
+    setActiveChannelId(undefined);
     setSpeakingUserIds(new Set());
     setConnQuality(null);
   };

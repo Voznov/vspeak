@@ -125,7 +125,7 @@ export class WebRTCService implements OnModuleInit {
           producerInfos.push({
             producerId: producer.id as ProducerId,
             kind: producer.kind,
-            source: (producer.appData as { source?: ProducerSource }).source ?? 'user',
+            source: producer.appData.source,
             userId: uid,
           });
         }
@@ -141,15 +141,13 @@ export class WebRTCService implements OnModuleInit {
       throw new HttpException('Unknown channel id', HttpStatus.NOT_FOUND);
     }
 
-    // If the user is already connected, close their old transports
+    // If the user is already connected, close their old transports without notifying ChannelsService
     if (this.userInfos.has(userId)) {
-      this.closeTransports(userId);
+      this.closeTransports(userId, false);
     }
 
-    // onClose callback calls closeTransports and the provided onDisconnect
     const handleTransportClose = () => {
       this.closeTransports(userId);
-      this.channelsService.onUserDisconnected(userId, channelId);
     };
 
     const recvTransport = await this.createTransport(channelInfo.router, handleTransportClose);
@@ -184,15 +182,14 @@ export class WebRTCService implements OnModuleInit {
     return { send, recv };
   }
 
-  public closeTransports(userId: UserId): void {
+  public closeTransports(userId: UserId, notify = true): void {
     const userInfo = this.userInfos.get(userId);
     if (!userInfo) {
       return;
     }
 
-    const { recvTransport, sendTransport, producers, consumers } = userInfo;
+    const { channelId, recvTransport, sendTransport, producers, consumers } = userInfo;
 
-    // Close all resources
     this.userInfos.delete(userId);
     [...producers.values()].forEach((producer) => producer.close());
     [...consumers.values()].forEach((consumer) => consumer.close());
@@ -200,7 +197,9 @@ export class WebRTCService implements OnModuleInit {
     sendTransport.close();
 
     void this.wsGateway.leaveRoom(userId);
-    // userId is NOT removed from channel.userIds here — ChannelsService handles that via callback
+    if (notify) {
+      this.channelsService.onUserDisconnected(userId, channelId);
+    }
   }
 
   public closeProducer(userId: UserId, producerId: ProducerId): void {

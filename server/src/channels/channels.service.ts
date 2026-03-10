@@ -11,9 +11,12 @@ type ChannelRuntime = {
   userIds: Set<UserId>;
 };
 
+const RECONNECT_GRACE_MS = 5_000;
+
 @Injectable()
 export class ChannelsService implements OnModuleInit {
   private readonly runtime = new Map<ChannelId, ChannelRuntime>();
+  private readonly disconnectTimers = new Map<UserId, ReturnType<typeof setTimeout>>();
 
   constructor(
     private readonly repo: ChannelsRepo,
@@ -33,7 +36,7 @@ export class ChannelsService implements OnModuleInit {
     this.wsGateway.onUserDisconnect((userId) => {
       const channelId = this.findUserChannelId(userId);
       if (channelId) {
-        void this.leaveChannel(userId, channelId);
+        this.setDisconnectTimer(userId, channelId);
       }
     });
   }
@@ -75,6 +78,7 @@ export class ChannelsService implements OnModuleInit {
 
     // Disconnect all users before deleting the channel
     for (const userId of rt.userIds) {
+      this.cancelDisconnectTimer(userId);
       this.webrtcService.closeTransports(userId);
     }
 
@@ -102,18 +106,26 @@ export class ChannelsService implements OnModuleInit {
       throw new HttpException('Channel not found', HttpStatus.NOT_FOUND);
     }
 
-    // If the user is already connected somewhere, disconnect them first
-    const currentChannelId = this.findUserChannelId(userId);
-    if (currentChannelId) {
-      await this.leaveChannel(userId, currentChannelId);
+    const [user, channel] = await Promise.all([this.userService.getUser(userId), this.repo.getChannelById(channelId)]);
+    if (!user) {
+      throw new HttpException('Unauthorized', HttpStatus.UNAUTHORIZED);
     }
+    if (!channel) {
+      throw new HttpException('Channel not found', HttpStatus.NOT_FOUND);
+    }
+
+    // If the user is already connected somewhere, disconnect them first
+    const previousChannelId = this.findUserChannelId(userId);
+    if (previousChannelId && previousChannelId !== channelId) {
+      await this.leaveChannel(userId, previousChannelId);
+    }
+
+    this.cancelDisconnectTimer(userId);
 
     // Add the user to the channel
     rt.userIds.add(userId);
 
-    const [user, channel] = await Promise.all([this.userService.getUser(userId), this.repo.getChannelById(channelId)]);
-
-    if (user) {
+    if (previousChannelId !== channelId) {
       this.wsGateway.emitToAll('channelUserJoined', {
         channelId,
         user: { ...user, isConnected: false, hasMic: false, isMuted: false, hasVideo: false, hasScreen: false, isDeaf: false },
@@ -123,7 +135,7 @@ export class ChannelsService implements OnModuleInit {
     return {
       channel: {
         id: channelId,
-        name: channel!.name,
+        name: channel.name,
         users: await this.getChannelUsers(channelId),
       },
     };
@@ -131,9 +143,11 @@ export class ChannelsService implements OnModuleInit {
 
   async leaveChannel(userId: UserId, channelId: ChannelId): Promise<void> {
     const rt = this.runtime.get(channelId);
-    if (!rt) {
+    if (!rt || !rt.userIds.has(userId)) {
       return;
     }
+
+    this.cancelDisconnectTimer(userId);
 
     // Close WebRTC resources (will trigger the onUserDisconnected callback)
     this.webrtcService.closeTransports(userId);
@@ -145,6 +159,30 @@ export class ChannelsService implements OnModuleInit {
     if (rt && rt.userIds.has(userId)) {
       rt.userIds.delete(userId);
       this.wsGateway.emitToAll('channelUserLeft', { channelId, userId });
+    }
+  }
+
+  private setDisconnectTimer(userId: UserId, channelId: ChannelId): void {
+    this.cancelDisconnectTimer(userId);
+    this.disconnectTimers.set(
+      userId,
+      setTimeout(() => {
+        this.disconnectTimers.delete(userId);
+        void this.leaveChannel(userId, channelId);
+      }, RECONNECT_GRACE_MS),
+    );
+    this.wsGateway.emitToAll('channelUserStatusChanged', {
+      channelId,
+      userId,
+      status: { ...this.webrtcService.getUserMediaStatus(userId), isConnected: false },
+    });
+  }
+
+  private cancelDisconnectTimer(userId: UserId): void {
+    const timer = this.disconnectTimers.get(userId);
+    if (timer) {
+      clearTimeout(timer);
+      this.disconnectTimers.delete(userId);
     }
   }
 

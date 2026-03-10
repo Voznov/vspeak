@@ -9,7 +9,15 @@ import { ProducerGroupView, type ProducerGroup } from './ProducerGroupView';
 import { useToast } from './ToastProvider';
 import { theme } from '../theme';
 import { calculateGrid } from '../utils/calculateGrid';
-import type { ChannelWithUsers, ProducerInfo, ProducerSource, User, UserId, UserWithStatus, WsEvents } from '../../../libs/api/entities';
+import type {
+  ChannelWithUsers,
+  ProducerInfo,
+  ProducerSource,
+  User,
+  UserId,
+  UserWithStatus,
+  WsEvents,
+} from '../../../libs/api/entities';
 import { sounds } from '../sounds';
 import type { ConnQuality } from '../types';
 
@@ -23,10 +31,22 @@ type ChannelViewProps = {
 };
 
 const groupProducers = (infos: ProducerInfo[], channelUsers: UserWithStatus[]): ProducerGroup[] => {
-  const userMap = new Map(channelUsers.map((u) => [u.id, { nickname: u.nickname, bgColor: u.bgColor, avatarUrl: u.avatarUrl, isConnected: u.isConnected }]));
+  const userMap = new Map(
+    channelUsers.map((u) => [
+      u.id,
+      { nickname: u.nickname, bgColor: u.bgColor, avatarUrl: u.avatarUrl, isConnected: u.isConnected },
+    ]),
+  );
   const groups = new Map<string, ProducerGroup>();
   channelUsers.forEach((user) => {
-    groups.set(`${user.id}:user`, { userId: user.id, nickname: user.nickname, bgColor: user.bgColor, avatarUrl: user.avatarUrl, isConnected: user.isConnected, source: 'user' });
+    groups.set(`${user.id}:user`, {
+      userId: user.id,
+      nickname: user.nickname,
+      bgColor: user.bgColor,
+      avatarUrl: user.avatarUrl,
+      isConnected: user.isConnected,
+      source: 'user',
+    });
   });
   for (const info of infos) {
     const key = `${info.userId}:${info.source}`;
@@ -35,7 +55,14 @@ const groupProducers = (infos: ProducerInfo[], channelUsers: UserWithStatus[]): 
     const bgColor = userData?.bgColor ?? '#78909C';
     const avatarUrl = userData?.avatarUrl;
     const isConnected = userData?.isConnected ?? false;
-    const group = groups.get(key) ?? { userId: info.userId, nickname, bgColor, avatarUrl, isConnected, source: info.source };
+    const group = groups.get(key) ?? {
+      userId: info.userId,
+      nickname,
+      bgColor,
+      avatarUrl,
+      isConnected,
+      source: info.source,
+    };
     group[info.kind] = info;
     groups.set(key, group);
   }
@@ -92,7 +119,7 @@ export function ChannelView({ user, socket, channel, onLeave, onSpeakingChange, 
       });
     };
     const onChannelUserJoined = (data: WsEvents['channelUserJoined']) => {
-      if (data.channelId !== channelIdRef.current || data.user.id === user.id) return;
+      if (data.channelId !== channelIdRef.current) return;
       sounds.joinChannel();
       addLog(`👤 ${data.user.nickname} joined`);
     };
@@ -161,7 +188,7 @@ export function ChannelView({ user, socket, channel, onLeave, onSpeakingChange, 
 
       newSendTransport.on('produce', async ({ kind, rtpParameters, appData }, callback, errback) => {
         try {
-          const source = ((appData as Record<string, unknown>).source as ProducerSource | undefined) ?? 'user';
+          const source = (appData.source as ProducerSource | undefined) ?? 'user';
           const { producerId } = await api.WebRtc.produceStream({ kind, source, rtpParameters });
           callback({ id: producerId });
         } catch (error) {
@@ -196,7 +223,6 @@ export function ChannelView({ user, socket, channel, onLeave, onSpeakingChange, 
       if (deafEnabledStorage.get()) {
         void api.WebRtc.setDeaf({ isDeaf: true });
       }
-      sounds.joinChannel();
     } catch (error) {
       addLog(`❌ Error: ${error}`);
     } finally {
@@ -321,7 +347,6 @@ export function ChannelView({ user, socket, channel, onLeave, onSpeakingChange, 
           </div>
         ))}
       </div>
-
 
       {connecting && (
         <div

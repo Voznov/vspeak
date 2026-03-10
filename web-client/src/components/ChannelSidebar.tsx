@@ -11,7 +11,7 @@ import { UserAvatar } from './UserAvatar';
 
 type ChannelSidebarProps = {
   channels: ChannelWithUsers[];
-  activeChannelId: ChannelId | null;
+  activeChannelId: ChannelId | undefined;
   currentUser: User;
   speakingUserIds: Set<UserId>;
   connQuality: ConnQuality | null;
