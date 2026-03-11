@@ -3,7 +3,7 @@ import { Device } from 'mediasoup-client';
 import type { Transport } from 'mediasoup-client/types';
 import type { Socket } from 'socket.io-client';
 import { api } from '../api';
-import { deafEnabledStorage, speakerDeviceStorage, useStorageItemState } from '../storage';
+import { deafEnabledStorage } from '../storage';
 import { ControlBar } from './controls/ControlBar';
 import { ProducerGroupView, type ProducerGroup } from './ProducerGroupView';
 import { useToast } from './ToastProvider';
@@ -78,7 +78,6 @@ export function ChannelView({ user, socket, channel, onLeave, onSpeakingChange, 
   const [producerInfos, setProducerInfos] = useState<ProducerInfo[]>([]);
   const [connecting, setConnecting] = useState(true);
   const [connectionAttempt, setConnectionAttempt] = useState(0);
-  const [speakerDeviceId, setSpeakerDeviceId] = useStorageItemState(speakerDeviceStorage);
 
   const sendTransportRef = useRef<Transport | null>(null);
   const recvTransportRef = useRef<Transport | null>(null);
@@ -337,7 +336,6 @@ export function ChannelView({ user, socket, channel, onLeave, onSpeakingChange, 
                   isSelf={group.userId === user.id}
                   isDeafUser={channelUsersRef.current.some((u) => u.id === group.userId && u.isDeaf)}
                   isMutedUser={channelUsersRef.current.some((u) => u.id === group.userId && u.isMuted)}
-                  speakerDeviceId={speakerDeviceId}
                   onLog={addLog}
                   onSpeakingChange={handleSpeakingChange}
                   onFatalError={() => setConnectionAttempt((n) => n + 1)}
@@ -370,7 +368,6 @@ export function ChannelView({ user, socket, channel, onLeave, onSpeakingChange, 
         channelId={channel.id}
         sendTransport={sendTransport}
         connecting={connecting}
-        onSpeakerChange={setSpeakerDeviceId}
         onLog={addLog}
         onLeave={() => {
           sounds.leaveChannel();

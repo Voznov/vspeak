@@ -49,7 +49,12 @@ export function MicrophoneButton({ sendTransport, onLog }: MicrophoneButtonProps
 
   const loadDevices = async () => {
     const all = await navigator.mediaDevices.enumerateDevices();
-    setDevices(all.filter((d) => d.kind === 'audioinput'));
+    const filtered = all.filter((d) => d.kind === 'audioinput');
+    setDevices(filtered);
+    const stored = micDeviceStorage.get();
+    if (stored && !filtered.some((d) => d.deviceId === stored)) {
+      selectDevice(undefined);
+    }
   };
 
   const onUndeafen = () => {
@@ -71,7 +76,7 @@ export function MicrophoneButton({ sendTransport, onLog }: MicrophoneButtonProps
     if (!silent) sounds.unmute();
   };
 
-  const selectDevice = (deviceId: string) => {
+  const selectDevice = (deviceId: string | undefined) => {
     setSelectedDeviceId(deviceId);
     if (active && sendTransport && !sendTransport.closed) {
       getPipeline().stop();

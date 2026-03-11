@@ -15,12 +15,11 @@ type ControlBarProps = {
   channelId: ChannelId;
   sendTransport: Transport | null;
   connecting: boolean;
-  onSpeakerChange: (deviceId: string) => void;
   onLog: (entry: string) => void;
   onLeave: () => void;
 };
 
-export function ControlBar({ channelId, sendTransport, connecting, onSpeakerChange, onLog, onLeave }: ControlBarProps) {
+export function ControlBar({ channelId, sendTransport, connecting, onLog, onLeave }: ControlBarProps) {
   return (
     <div
       key={channelId}
@@ -40,7 +39,7 @@ export function ControlBar({ channelId, sendTransport, connecting, onSpeakerChan
         zIndex: 100,
       }}
     >
-      <SpeakerButton onSpeakerChange={onSpeakerChange} />
+      <SpeakerButton />
       <MicrophoneButton
         sendTransport={sendTransport}
         onLog={onLog}

@@ -8,7 +8,7 @@ import type { Transport } from 'mediasoup-client/types';
 import { api } from '../api';
 import type { ProducerInfo, ProducerSource, UserId } from '../../../libs/api/entities';
 import { UserAvatar } from './UserAvatar';
-import { deafEnabledStorage, useStorageItemState } from '../storage';
+import { deafEnabledStorage, speakerDeviceStorage, useStorageItemState } from '../storage';
 
 export type ProducerGroup = {
   userId: UserId;
@@ -28,7 +28,6 @@ type Props = {
   isSelf: boolean;
   isDeafUser: boolean;
   isMutedUser: boolean;
-  speakerDeviceId?: string;
   onLog: (entry: string) => void;
   onSpeakingChange: (userId: UserId, speaking: boolean) => void;
   onFatalError: () => void;
@@ -46,7 +45,6 @@ export function ProducerGroupView({
   isSelf,
   isDeafUser,
   isMutedUser,
-  speakerDeviceId,
   onLog,
   onSpeakingChange,
   onFatalError,
@@ -59,6 +57,7 @@ export function ProducerGroupView({
   const rafRef = useRef<number | null>(null);
   const speakingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [isDeaf] = useStorageItemState(deafEnabledStorage);
+  const [speakerDeviceId] = useStorageItemState(speakerDeviceStorage);
   const [hasVideo, setHasVideo] = useState(false);
   const [hovered, setHovered] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);

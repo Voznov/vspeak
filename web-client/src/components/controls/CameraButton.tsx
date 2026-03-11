@@ -22,7 +22,12 @@ export function CameraButton({ sendTransport, onLog }: CameraButtonProps) {
 
   const loadDevices = async () => {
     const all = await navigator.mediaDevices.enumerateDevices();
-    setDevices(all.filter((d) => d.kind === 'videoinput'));
+    const filtered = all.filter((d) => d.kind === 'videoinput');
+    setDevices(filtered);
+    const stored = cameraDeviceStorage.get();
+    if (stored && !filtered.some((d) => d.deviceId === stored)) {
+      void selectDevice(undefined);
+    }
   };
 
   const stop = async (silent = false) => {
@@ -71,7 +76,7 @@ export function CameraButton({ sendTransport, onLog }: CameraButtonProps) {
     }
   };
 
-  const selectDevice = async (deviceId: string) => {
+  const selectDevice = async (deviceId: string | undefined) => {
     setSelectedDeviceId(deviceId);
     if (active) {
       await stop(true);

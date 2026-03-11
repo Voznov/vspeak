@@ -6,11 +6,7 @@ import HeadphonesOffIcon from '../../assets/headphones-off.svg?react';
 import { ControlButton } from './ControlButton';
 import { sounds } from '../../sounds';
 
-type SpeakerButtonProps = {
-  onSpeakerChange: (deviceId: string) => void;
-};
-
-export function SpeakerButton({ onSpeakerChange }: SpeakerButtonProps) {
+export function SpeakerButton() {
   const [devices, setDevices] = useState<MediaDeviceInfo[]>([]);
   const [isDeaf, setIsDeaf] = useStorageItemState(deafEnabledStorage);
   const [selectedDeviceId, setSelectedDeviceId] = useStorageItemState(speakerDeviceStorage);
@@ -25,12 +21,16 @@ export function SpeakerButton({ onSpeakerChange }: SpeakerButtonProps) {
 
   const loadDevices = async () => {
     const all = await navigator.mediaDevices.enumerateDevices();
-    setDevices(all.filter((d) => d.kind === 'audiooutput'));
+    const filtered = all.filter((d) => d.kind === 'audiooutput');
+    setDevices(filtered);
+    const stored = speakerDeviceStorage.get();
+    if (stored && !filtered.some((d) => d.deviceId === stored)) {
+      selectDevice(undefined);
+    }
   };
 
-  const selectDevice = (deviceId: string) => {
+  const selectDevice = (deviceId: string | undefined) => {
     setSelectedDeviceId(deviceId);
-    onSpeakerChange(deviceId);
   };
 
   return (

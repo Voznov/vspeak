@@ -26,6 +26,35 @@ const BG: Record<'default' | 'green' | 'red', string> = {
   red: theme.danger.leave,
 };
 
+function PickerItem({ label, selected, onSelect }: { label: string; selected: boolean; onSelect: () => void }) {
+  const [hovered, setHovered] = useState(false);
+  const bg = selected ? theme.accent.active : hovered ? theme.button.inactive : 'transparent';
+  return (
+    <button
+      onClick={onSelect}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      style={{
+        display: 'block',
+        width: '100%',
+        padding: '8px 12px',
+        background: bg,
+        border: 'none',
+        borderRadius: '4px',
+        color: theme.text.primary,
+        fontSize: '13px',
+        textAlign: 'left',
+        cursor: 'pointer',
+        whiteSpace: 'nowrap',
+        overflow: 'hidden',
+        textOverflow: 'ellipsis',
+      }}
+    >
+      {label}
+    </button>
+  );
+}
+
 export function ControlButton({ icon, variant, onClick, disabled, title, picker }: ControlButtonProps) {
   const [showPicker, setShowPicker] = useState(false);
   const containerRef = useRef<HTMLDivElement | null>(null);
@@ -149,30 +178,15 @@ export function ControlButton({ icon, variant, onClick, disabled, title, picker 
             </div>
           ) : (
             picker.items.map((item) => (
-              <button
+              <PickerItem
                 key={item.key}
-                onClick={() => {
+                label={item.label}
+                selected={item.key === picker.selected}
+                onSelect={() => {
                   picker.onSelect(item.key);
                   setShowPicker(false);
                 }}
-                style={{
-                  display: 'block',
-                  width: '100%',
-                  padding: '8px 12px',
-                  background: item.key === picker.selected ? theme.accent.active : 'transparent',
-                  border: 'none',
-                  borderRadius: '4px',
-                  color: theme.text.primary,
-                  fontSize: '13px',
-                  textAlign: 'left',
-                  cursor: 'pointer',
-                  whiteSpace: 'nowrap',
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis',
-                }}
-              >
-                {item.label}
-              </button>
+              />
             ))
           )}
         </div>
