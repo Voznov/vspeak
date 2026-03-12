@@ -9,9 +9,12 @@ import type { ConnQuality } from './types';
 import { activeChannelStorage, tokenStorage, useStorageItemState } from './storage';
 import { theme } from './theme';
 import type { ChannelId, ChannelWithUsers, User, UserId, WsEvents } from '../../libs/api/entities';
+import { useToast } from './components/ToastProvider';
+import { sounds } from './sounds';
 
 
 export function App() {
+  const addLog = useToast();
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [channels, setChannels] = useState<ChannelWithUsers[]>([]);
@@ -103,13 +106,22 @@ export function App() {
             : ch,
         ),
       );
+      if (data.channelId === activeChannelIdRef.current || data.user.id === user?.id) {
+        sounds.joinChannel();
+        addLog(`👤 ${data.user.nickname} joined`);
+      }
     };
     const onChannelUserLeft = (data: WsEvents['channelUserLeft']) => {
-      setChannels((prev) =>
-        prev.map((ch) =>
+      setChannels((prev) => {
+        if (data.channelId === activeChannelIdRef.current) {
+          const nickname = prev.find((c) => c.id === data.channelId)?.users.find((user) => user.id === data.userId)?.nickname ?? String(data.userId);
+          sounds.leaveChannel();
+          addLog(`👤 ${nickname} left`);
+        }
+        return prev.map((ch) =>
           ch.id === data.channelId ? { ...ch, users: ch.users.filter((user) => user.id !== data.userId) } : ch,
-        ),
-      );
+        );
+      });
     };
 
     const onChannelUserStatusChanged = (data: WsEvents['channelUserStatusChanged']) => {
@@ -173,7 +185,9 @@ export function App() {
   };
 
   const handleJoin = (channelId: ChannelId) => {
-    setActiveChannelId(channelId);
+    void api.Channels.joinChannel({ channelId })
+      .then(() => setActiveChannelId(channelId))
+      .catch((error) => addLog(`❌ Error: ${error}`));
   };
 
   const handleLeave = async () => {
@@ -255,7 +269,7 @@ export function App() {
       <div style={{ flex: 1, overflow: 'hidden' }}>
         {activeChannel && socket ? (
           <ChannelView
-            key={channelViewKey}
+            key={`${channelViewKey}-${activeChannelId}`}
             user={user}
             channel={activeChannel}
             socket={socket}

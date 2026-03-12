@@ -204,14 +204,10 @@ export class WebRTCService implements OnModuleInit {
 
   public closeProducer(userId: UserId, producerId: ProducerId): void {
     const userInfo = this.userInfos.get(userId);
-    if (!userInfo) {
-      throw new HttpException('User not found', HttpStatus.NOT_FOUND);
-    }
+    if (!userInfo) return;
 
     const producer = userInfo.producers.get(producerId);
-    if (!producer) {
-      throw new HttpException('Producer not found', HttpStatus.NOT_FOUND);
-    }
+    if (!producer) return;
 
     // Closing triggers the @close listener which emits producerClosed WS event
     producer.close();
@@ -219,9 +215,8 @@ export class WebRTCService implements OnModuleInit {
 
   public async connectTransport(userId: UserId, transportId: TransportId, dtlsParameters: DtlsParameters): Promise<void> {
     const userInfo = this.userInfos.get(userId);
-    if (!userInfo) {
-      throw new HttpException('User not found', HttpStatus.NOT_FOUND);
-    }
+    if (!userInfo) return;
+
     let transport: Transport;
     switch (transportId) {
       case userInfo.recvTransport.id: {
@@ -233,7 +228,8 @@ export class WebRTCService implements OnModuleInit {
         break;
       }
       default: {
-        throw new HttpException('Transport not found', HttpStatus.NOT_FOUND);
+        // Stale transport from a previous channel — ignore
+        return;
       }
     }
 

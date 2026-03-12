@@ -144,10 +144,13 @@ export class MicPipeline {
 
   private async teardown(): Promise<void> {
     if (this.producer) {
-      await api.WebRtc.closeProducer({ producerId: this.producer.id as ProducerId });
-      this.producer.close();
+      const { producer } = this;
       this.producer = null;
+
+      await api.WebRtc.closeProducer({ producerId: producer.id as ProducerId }).catch((e) => console.error('[MicPipeline] closeProducer error:', e));
+      producer.close();
     }
+
     void this.audioCtx?.close();
     this.audioCtx = null;
     this.source = null;
