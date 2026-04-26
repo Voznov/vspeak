@@ -1,9 +1,9 @@
 import { NestFactory } from '@nestjs/core';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import { ZodValidationPipe } from '@voznov/zod-dto-nestjs';
 import { AppModule } from './app.module';
 import { ENV } from './env';
 import { ExceptionFilter } from './exception-filter';
-import { ZodValidationPipe } from '../libs/validation';
 
 const KEEP_ALIVE_TIMEOUT = 5000;
 const HEADERS_TIMEOUT = 2 * KEEP_ALIVE_TIMEOUT;

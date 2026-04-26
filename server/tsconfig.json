@@ -29,6 +29,6 @@
     "noImplicitThis": false,
     "baseUrl": "."
   },
-  "include": ["src/**/*", "../libs/**/*", "libs/**/*"],
+  "include": ["src/**/*", "../libs/**/*"],
   "exclude": ["dist", "node_modules"]
 }

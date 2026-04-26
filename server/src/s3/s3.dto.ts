@@ -1,7 +1,7 @@
 import { Event } from '@aws-sdk/client-s3';
+import { ZodDto } from '@voznov/zod-dto';
 import { z } from 'zod';
 import { S3Bucket } from './s3.constants';
-import { ZodDto } from '../../libs/validation';
 
 const zS3Bucket = z.enum(S3Bucket);
 

@@ -1,5 +1,5 @@
+import { ZodDto } from '@voznov/zod-dto';
 import { z } from 'zod';
-import { ZodDto } from '../../libs/validation';
 import { UserDto } from '../shared.dto';
 
 export class LoginRequestDto extends ZodDto(

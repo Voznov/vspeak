@@ -1,31 +1,26 @@
+import { ZodDto } from '@voznov/zod-dto';
 import { z } from 'zod';
 import { UserEntity } from './user/user.entity';
 import type { ChannelId, ConsumerId, ProducerId, TransportId, UserId } from '../../libs/api/entities';
-import { ZodDto } from '../libs/validation';
 
 export const zUserId = z.string().transform((v) => v as UserId);
 export const zChannelId = z.string().transform((v) => v as ChannelId);
 export const zTransportId = z.string().transform((v) => v as TransportId);
 export const zProducerId = z.string().transform((v) => v as ProducerId);
 export const zConsumerId = z.string().transform((v) => v as ConsumerId);
-export { zBgColor } from './user/palette';
 
-export class UserDto extends ZodDto(
-  UserEntity.omit({ createdAt: true }).extend({
-    avatarUrl: z.string().optional(),
-  }),
-) {}
+export class UserDto extends UserEntity.omit({ createdAt: true }).extend({
+  avatarUrl: z.string().optional(),
+}) {}
 
-export class UserWithStatusDto extends ZodDto(
-  UserDto.extend({
-    isConnected: z.boolean(),
-    hasMic: z.boolean(),
-    isMuted: z.boolean(),
-    hasVideo: z.boolean(),
-    hasScreen: z.boolean(),
-    isDeaf: z.boolean(),
-  }),
-) {}
+export class UserWithStatusDto extends UserDto.extend({
+  isConnected: z.boolean(),
+  hasMic: z.boolean(),
+  isMuted: z.boolean(),
+  hasVideo: z.boolean(),
+  hasScreen: z.boolean(),
+  isDeaf: z.boolean(),
+}) {}
 
 export class ChannelDto extends ZodDto(
   z.object({

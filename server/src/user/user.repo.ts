@@ -2,8 +2,8 @@ import { Injectable } from '@nestjs/common';
 import { PALETTE } from './palette';
 import { UserEntity } from './user.entity';
 import type { UserId, UserRole } from '../../../libs/api/entities';
-import { toDto } from '../../libs/validation';
 import { PostgresService } from '../postgres/postgres.service';
+import { toInstance } from '../utils/to-instance';
 
 export { PALETTE };
 
@@ -15,19 +15,19 @@ export class UserRepo {
     const bgColor = PALETTE[Math.floor(Math.random() * PALETTE.length)];
     const { rows } = await this.pg.query('INSERT INTO users (nickname, role, bg_color) VALUES ($1, $2, $3) RETURNING *', [nickname, role, bgColor]);
 
-    return toDto(UserEntity, rows[0]);
+    return toInstance(UserEntity, rows[0]);
   }
 
   async getUserById(userId: UserId): Promise<UserEntity | undefined> {
     const { rows } = await this.pg.query('SELECT * FROM users WHERE id = $1', [userId]);
 
-    return rows[0] ? toDto(UserEntity, rows[0]) : undefined;
+    return rows[0] ? toInstance(UserEntity, rows[0]) : undefined;
   }
 
   async getUserByNickname(nickname: string): Promise<UserEntity | undefined> {
     const { rows } = await this.pg.query('SELECT * FROM users WHERE nickname = $1', [nickname]);
 
-    return rows[0] ? toDto(UserEntity, rows[0]) : undefined;
+    return rows[0] ? toInstance(UserEntity, rows[0]) : undefined;
   }
 
   async updateUser(userId: UserId, fields: { nickname?: string; bgColor?: string }): Promise<UserEntity> {
@@ -46,6 +46,6 @@ export class UserRepo {
 
     const { rows } = await this.pg.query(`UPDATE users SET ${setClauses.join(', ')} WHERE id = $1 RETURNING *`, values);
 
-    return toDto(UserEntity, rows[0]);
+    return toInstance(UserEntity, rows[0]);
   }
 }

@@ -1,5 +1,5 @@
+import { ZodDto } from '@voznov/zod-dto';
 import { z } from 'zod';
-import { ZodDto } from '../../libs/validation';
 import { ChannelDto, ChannelWithUsersDto, UserDto, zChannelId } from '../shared.dto';
 
 export class UpdateChannelRequestDto extends ZodDto(
